@@ -29,6 +29,7 @@
 			max-height: calc(100vh - 40px);
 			overflow-y: auto;
 			align-self: start;}
+        .options-panel { overflow-y: visible; }
         .result-panel {
     display: flex;
     flex-direction: column;
@@ -62,7 +63,7 @@
         input[type="range"] { width: 100%; height: 6px; border-radius: 3px; background: #e0e0e0; outline: none; -webkit-appearance: none; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #333333; cursor: pointer; border: 1px solid #cccccc; }
         .input-group { margin-bottom: 15px; }
-        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .input-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; margin-top: 15px; align-items: end; }
         .input-label { display: block; font-weight: 500; margin-bottom: 6px; color: #333333; font-size: 0.95rem; }
         .text-input, .date-input, .select-input { width: 100%; padding: 8px; border: 1px solid #cccccc; border-radius: 4px; font-size: 0.95rem; background-color: #ffffff; }
         .text-input:focus, .date-input:focus, .select-input:focus { outline: none; border-color: #666666; }
@@ -74,8 +75,8 @@
         .discount-checkbox { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
         .discount-checkbox input { margin: 0; }
         .addon-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .addon-item { display: flex; flex-direction: column; padding: 10px; border: 1px solid #e0e0e0; border-radius: 4px; background-color: #f9f9f9; height: 100%; }
-        .addon-header { display: flex; align-items: flex-start; margin-bottom: 8px; }
+        .addon-item { display: flex; flex-direction: column; padding: 10px; border: 1px solid #e0e0e0; border-radius: 4px; background-color: #f9f9f9; height: 100%; overflow: visible; }
+        .addon-header { display: flex; align-items: center; margin-bottom: 4px; }
         .addon-checkbox { margin-right: 10px; margin-top: 2px; }
         .addon-name { font-weight: 500; color: #333333; font-size: 0.9rem; }
         .addon-option { display: flex; align-items: center; margin-top: 5px; font-size: 0.85rem; color: #666666; }
@@ -107,6 +108,23 @@
         .notification { position: fixed; top: 20px; right: 20px; background-color: #333333; color: white; padding: 10px 16px; border-radius: 4px; font-size: 0.85rem; opacity: 0; transform: translateY(-10px); transition: opacity 0.3s, transform 0.3s; z-index: 1000; }
         .notification.show { opacity: 1; transform: translateY(0); }
         .section-divider { height: 1px; background-color: #e0e0e0; margin: 20px 0; }
+        /* Tab navigation */
+        .tab-nav { display: flex; gap: 0; margin-bottom: 15px; border-bottom: 2px solid #e0e0e0; }
+        .tab-btn { padding: 8px 20px; border: none; background: none; cursor: pointer; font-size: 0.95rem; font-weight: 500; color: #999; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+        .tab-btn:hover { color: #666; }
+        .tab-btn.active { color: #333; border-bottom-color: #333; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        /* Souvenir items */
+        .souvenir-item { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px; border: 1px solid #e0e0e0; border-radius: 4px; background-color: #f9f9f9; margin-bottom: 10px; overflow: visible; }
+        .souvenir-name { font-weight: 500; font-size: 0.9rem; min-width: 120px; }
+        .souvenir-qty { width: 70px; padding: 4px 6px; border: 1px solid #cccccc; border-radius: 3px; font-size: 0.85rem; text-align: center; }
+        .souvenir-total { font-weight: 600; font-size: 0.9rem; color: #333; min-width: 70px; text-align: right; }
+        /* Mobile floating price bar */
+        .mobile-price-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #333333; color: white; padding: 10px 16px; z-index: 999; box-shadow: 0 -2px 10px rgba(0,0,0,0.2); justify-content: space-between; align-items: center; font-size: 0.9rem; }
+        .mobile-price-bar .bar-price { font-size: 1.1rem; font-weight: 600; }
+        .mobile-price-bar .bar-detail { color: #cccccc; font-size: 0.8rem; }
+        @media (max-width: 900px) { .mobile-price-bar { display: flex; } body { padding-bottom: 60px; } }
     </style>
 </head>
 <body>
@@ -114,45 +132,58 @@
         <header><h1>Invitation Price Calculator</h1></header>
         <div class="calculator-wrapper">
             <div class="options-panel">
-                <h2 class="section-title">Customization Options</h2>
-                <div class="option-group">
-                    <label class="option-label">1. Event Type</label>
-                    <div class="event-option-grid" id="event-type-options">
-                        <div class="option-card selected" data-value="wedding" data-price="0"><div class="option-name">Wedding</div></div>
-                        <div class="option-card" data-value="debut" data-price="0"><div class="option-name">Debut</div></div>
-                        <div class="option-card" data-value="birthday" data-price="0"><div class="option-name">Birthday</div></div>
-                        <div class="option-card" data-value="baptism" data-price="0"><div class="option-name">Baptism</div></div>
-                        <div class="option-card" data-value="special-event" data-price="0"><div class="option-name">Special event</div></div>
+                <div class="tab-nav">
+                    <button class="tab-btn active" onclick="switchTab('invitation')">Invitation</button>
+                    <button class="tab-btn" onclick="switchTab('passport')">Passport</button>
+                    <button class="tab-btn" onclick="switchTab('souvenir')">Souvenir</button>
+                </div>
+                <div class="tab-panel active" id="tab-invitation">
+                <div style="display:flex;gap:12px;">
+                    <div class="option-group" style="flex:1;">
+                        <label class="option-label">1. Event Type</label>
+                        <select class="select-input" id="event-type-select" style="height:40px;font-size:15px;width:100%;">
+                            <option value="wedding" data-price="0" selected>Wedding</option>
+                            <option value="debut" data-price="0">Debut</option>
+                            <option value="birthday" data-price="0">Birthday</option>
+                            <option value="baptism" data-price="0">Baptism</option>
+                            <option value="special-event" data-price="0">Special event</option>
+                        </select>
+                    </div>
+                    <div class="option-group" style="flex:1;"><label class="option-label">2. Size</label>
+                        <select class="select-input" id="size-select" style="height:40px;font-size:15px;width:100%;">
+                            <option value="4r" data-price="0" selected>4R</option>
+                            <option value="5r" data-price="10">5R</option>
+                        </select>
                     </div>
                 </div>
-                <div class="option-group"><label class="option-label">2. Size</label>
-                    <div class="option-grid" id="size-options">
-                        <div class="option-card selected" data-value="4r" data-price="0"><div class="option-name">4R</div></div>
-                        <div class="option-card" data-value="5r" data-price="10"><div class="option-name">5R</div></div>
-                    </div>
-                </div>
-                <div class="option-group"><label class="option-label">3. Envelope Type</label>
-                    <div class="option-grid" id="envelope-options">
-                        <div class="option-card" data-value="no-envelope" data-price="-5"><div class="option-name">No envelope</div></div>
-                        <div class="option-card selected" data-value="plain-white" data-price="0"><div class="option-name">Plain white</div></div>
-                        <div class="option-card" data-value="colored" data-price="15"><div class="option-name">Colored</div></div>
-                        <div class="option-card" data-value="transparent" data-price="15"><div class="option-name">Transparent</div></div>
-                        <div class="option-card" data-value="premium-colored" data-price="20"><div class="option-name">Premium colored</div></div>
-                        <div class="option-card" data-value="vellum-cover" data-price="20"><div class="option-name">Vellum cover</div></div>
-                        <div class="option-card" data-value="gatefold" data-price="40"><div class="option-name">Gatefold</div></div>
-                        <div class="option-card" data-value="pocket-cover" data-price="25"><div class="option-name">Pocket Cover</div></div>
-                        <div class="option-card" data-value="pouch-cover" data-price="55"><div class="option-name">Pouch Cover</div></div>
-                        <div class="option-card" data-value="trifold" data-price="45"><div class="option-name">Trifold</div></div>
-                        <div class="option-card" data-value="vellum-cover-print" data-price="30"><div class="option-name">Vellum cover with print</div></div>
-                        <div class="option-card" data-value="portrait-colored" data-price="35"><div class="option-name">Portrait colored</div></div>
-                        <div class="option-card" data-value="premium-portrait-colored" data-price="45"><div class="option-name">Premium portrait colored</div></div>
+                <div style="display:flex;gap:12px;">
+                    <div class="option-group" style="flex:1;"><label class="option-label">3. Envelope Type</label>
+                    <select class="select-input" id="envelope-select" style="height:40px;font-size:15px;width:100%;">
+                        <option value="no-envelope" data-price="-5">No envelope</option>
+                        <option value="plain-white" data-price="0" selected>Plain white</option>
+                        <option value="colored" data-price="15">Colored</option>
+                        <option value="transparent" data-price="15">Transparent</option>
+                        <option value="premium-colored" data-price="20">Premium colored</option>
+                        <option value="vellum-cover" data-price="20">Vellum cover</option>
+                        <option value="gatefold" data-price="40">Gatefold</option>
+                        <option value="pocket-cover" data-price="25">Pocket Cover</option>
+                        <option value="pouch-cover" data-price="55">Pouch Cover</option>
+                        <option value="trifold" data-price="45">Trifold</option>
+                        <option value="vellum-cover-print" data-price="30">Vellum cover with print</option>
+                        <option value="portrait-colored" data-price="35">Portrait colored</option>
+                        <option value="premium-portrait-colored" data-price="45">Premium portrait colored</option>
+                    </select></div>
+                    <div class="option-group" style="flex:1;"><label class="option-label">4. Number of Inserts</label>
+                    <div class="addon-option"><label>Inserts:</label><input type="number" class="addon-input" id="inserts-input" min="0" max="100" value="2" oninput="this.value = Math.max(0, parseInt(this.value) || 0)" style="width:120px;"></div>
                     </div>
                 </div>
   
-				<input type="checkbox" id="envelope-checkbox" style="vertical-align: middle;">
-				<label for="envelope-checkbox" ></label style="vertical-align: middle; margin-right: 10px;">
-				<select class="select-input" id="color-select" style="vertical-align: middle; height: 40px; width: 160px; font-size: 15px; margin-right: 10px;">
-					<option value="">Select color</option>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        <input type="checkbox" id="envelope-checkbox" style="vertical-align: middle;">
+                        <label for="envelope-checkbox"></label>
+                        <select class="select-input" id="color-select" style="height:40px;width:160px;font-size:15px;">
+                            <option value="">Select color</option>
 					<option value="Amethyst">Amethyst</option>
 					<option value="Asea 44">Asea 44</option>
 					<option value="Apple green">Apple green</option>
@@ -235,117 +266,182 @@
 					<option value="Glossy">Glossy</option>
 					<option value="Textured">Textured</option>
 				</select>
-
-			
-                <div class="option-group"><label class="option-label">4. Number of Inserts</label>
-                    <div class="slider-container"><input type="range" id="inserts-slider" min="0" max="10" value="0" step="1"><div class="slider-value" id="inserts-value">0 inserts</div></div>
-                </div>
-                <div class="option-group"><label class="option-label">5. Paper Type</label>
-                    <div class="option-grid" id="paper-options">
-                        <div class="option-card selected" data-value="matte" data-price="0"><div class="option-name">Matte</div></div>
-                        <div class="option-card" data-value="glossy" data-price="0"><div class="option-name">Glossy</div></div>
-                        <div class="option-card" data-value="premium-matte" data-price="5"><div class="option-name">Premium matte</div></div>
-                        <div class="option-card" data-value="matte-textured" data-price="5"><div class="option-name">Matte textured</div></div>
-                        <div class="option-card" data-value="glossy-textured" data-price="5"><div class="option-name">Glossy textured</div></div>
                     </div>
                 </div>
-                <div class="option-group"><label class="option-label">6. Envelope Seal</label>
-                    <div class="option-grid" id="seal-options">
-                        <div class="option-card selected" data-value="no-seal" data-price="0"><div class="option-name">No seal</div></div>
-                        <div class="option-card" data-value="sticker-seal" data-price="0"><div class="option-name">Sticker seal</div></div>
-                        <div class="option-card" data-value="wax-seal" data-price="5"><div class="option-name">Wax seal</div></div>
-                        <div class="option-card" data-value="belt" data-price="5"><div class="option-name">Belt</div></div>
-                        <div class="option-card" data-value="wax-seal-string" data-price="10"><div class="option-name">Wax seal with string</div></div>
-                        <div class="option-card" data-value="belt-print" data-price="10"><div class="option-name">Belt with print</div></div>
-                        <div class="option-card" data-value="frosted-belt" data-price="10"><div class="option-name">Frosted belt</div></div>
-                        <div class="option-card" data-value="ribbon" data-price="10"><div class="option-name">Ribbon</div></div>
-                        <div class="option-card" data-value="printed-tag" data-price="0"><div class="option-name">Printed tag</div></div>
-                        <div class="option-card" data-value="jute-string" data-price="5"><div class="option-name">Jute string</div></div>
-                        <div class="option-card" data-value="wax-seal-flower" data-price="15"><div class="option-name">Wax seal with flower</div></div>
-                        <div class="option-card" data-value="frosted-belt-print" data-price="15"><div class="option-name">Frosted belt with print</div></div>
-                        <div class="option-card" data-value="frayed-ribbon" data-price="15"><div class="option-name">Frayed ribbon</div></div>
-                        <div class="option-card" data-value="wax-seal-string-flower" data-price="20"><div class="option-name">Wax seal with string and flower</div></div>
-                    </div>
+                <div style="display:flex;gap:12px;">
+                    <div class="option-group" style="flex:1;"><label class="option-label">5. Paper Type</label>
+                    <select class="select-input" id="paper-select" style="height:40px;font-size:15px;width:100%;">
+                        <option value="matte" data-price="0" selected>Matte</option>
+                        <option value="glossy" data-price="0">Glossy</option>
+                        <option value="premium-matte" data-price="5">Premium matte</option>
+                        <option value="matte-textured" data-price="5">Matte textured</option>
+                        <option value="glossy-textured" data-price="5">Glossy textured</option>
+                    </select></div>
+                    <div class="option-group" style="flex:1;"><label class="option-label">6. Envelope Seal</label>
+                    <select class="select-input" id="seal-select" style="height:40px;font-size:15px;width:100%;">
+                        <option value="no-seal" data-price="0" selected>No seal</option>
+                        <option value="sticker-seal" data-price="0">Sticker seal</option>
+                        <option value="wax-seal" data-price="5">Wax seal</option>
+                        <option value="belt" data-price="5">Belt</option>
+                        <option value="wax-seal-string" data-price="10">Wax seal with string</option>
+                        <option value="belt-print" data-price="10">Belt with print</option>
+                        <option value="frosted-belt" data-price="10">Frosted belt</option>
+                        <option value="ribbon" data-price="10">Ribbon</option>
+                        <option value="printed-tag" data-price="0">Printed tag</option>
+                        <option value="jute-string" data-price="5">Jute string</option>
+                        <option value="wax-seal-flower" data-price="15">Wax seal with flower</option>
+                        <option value="frosted-belt-print" data-price="15">Frosted belt with print</option>
+                        <option value="frayed-ribbon" data-price="15">Frayed ribbon</option>
+                        <option value="wax-seal-string-flower" data-price="20">Wax seal with string and flower</option>
+                    </select></div>
                 </div>
                 
                 <!-- Add-ons Section -->
                 <div class="option-group">
                     <label class="option-label">7. Add-ons</label>
-                    <div class="addon-grid" id="addons-grid">
-                        <!-- Add-ons will be added here by JavaScript -->
-                    </div>
-                </div>
-                
-                <div class="section-divider"></div>
-				<div class="option-group">
-					<label class="option-label">Import Quotation</label>
-					<div style="margin-bottom: 8px; font-size: 0.85rem; color: #666;">
-					</div>
-					<textarea class="text-input" id="import-textarea" rows="4" placeholder="Paste quotation text here..."></textarea>
-					<button class="action-button" id="import-button" style="margin-top: 10px; width: 100%;">
-						<i class="fas fa-file-import"></i> Import Quotation
-					</button>
-				</div>
-				<div class="section-divider"></div>
-				<h2 class="section-title">Customization Options</h2>
-                
-                <!-- Layout & Rush Section -->
-                <h2 class="section-title">Order Details</h2>
-                <div class="layout-rush-section">
-                    <label class="option-label">Layout Selection</label>
-                    <div class="layout-rush-row">
-                        <div class="layout-rush-checkbox"><input type="checkbox" id="layout-checkbox"><label for="layout-checkbox">Layout Required</label></div>
-                        <select class="select-input" id="layout-type">
-                            <option value="no-layout">No layout</option>
-                            <option value="own-layout">Own layout</option>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <select class="select-input" id="addon-picker" style="flex:1;height:40px;font-size:15px;">
+                            <option value="">— Select add-on —</option>
                         </select>
+                        <button class="action-button" id="add-addon-button" style="padding:8px 16px;white-space:nowrap;">+ Add</button>
                     </div>
-                    <label class="option-label">Rush Fee</label>
-                    <div class="layout-rush-row">
-                        <div class="layout-rush-checkbox"><input type="checkbox" id="rush-checkbox"><label for="rush-checkbox">Rush Order</label></div>
-                        <select class="select-input" id="rush-type">
-                            <option value="no-layout">No layout</option>
-                            <option value="own-layout">Own layout</option>
-                        </select>
-                    </div>
-                    <div class="discount-checkbox-row">
-                        <div class="discount-checkbox"><input type="checkbox" id="discount-checkbox"><label for="discount-checkbox">Discount (Remove free sets, pay less but receive same quantity)</label></div>
-                    </div>
-                </div>
-                
-                <!-- Payment Method Section -->
-                <div class="option-group">
-                    <label class="option-label">Payment Method</label>
-                    <div class="option-grid" id="payment-method-options">
-                        <div class="option-card" data-value="none"><div class="option-name">Show All</div></div>
-                        <div class="option-card selected" data-value="direct-shipping"><div class="option-name">Direct shipping</div></div>
-                        <div class="option-card" data-value="shopee-checkout"><div class="option-name">Shopee checkout</div></div>
-                        <div class="option-card" data-value="shopee-checkout-full"><div class="option-name">Shopee checkout full payment</div></div>
-                    </div>
-                </div>
-                
-                <!-- Location Section -->
-                <div class="option-group">
-                    <label class="option-label">Location</label>
-                    <select class="select-input" id="location-select">
-                        <option value="">Select location</option>
-                        <option value="ncr">NCR</option>
-                        <option value="north-luzon">North Luzon</option>
-                        <option value="central-luzon">Central Luzon</option>
-                        <option value="south-luzon">South Luzon</option>
-                        <option value="visayas">Visayas</option>
-                        <option value="mindanao">Mindanao</option>
-                    </select>
+                    <div id="selected-addons-list" style="margin-top:8px;"></div>
                 </div>
                 
                 <div class="input-row">
-                    <div class="input-group"><label class="input-label">Number of Sets</label><input type="number" class="text-input" id="sets-input" min="1" max="1000" value="20"></div>
-                    <div class="input-group"><label class="input-label">Event Date</label><input type="date" class="date-input" id="event-date-input" value=""></div>
+                    <div class="input-group"><label class="input-label">Number of Sets</label><input type="number" class="text-input" id="sets-input" min="1" max="1000" value="20" oninput="this.value = Math.max(1, parseInt(this.value) || 1)"></div>
+                    <div class="discount-checkbox" style="align-self:end;margin-bottom:15px;padding:4px 8px;"><input type="checkbox" id="discount-checkbox"><label for="discount-checkbox">Discount</label></div>
+                    <div class="input-group" style="margin-left:-8px;"><label class="input-label">Event Date</label><input type="date" class="date-input" id="event-date-input" value=""></div>
+                </div>
+                
+                <!-- Layout & Rush Section -->
+                <div class="layout-rush-section">
+                    <div style="display:flex;gap:12px;">
+                        <div style="flex:1;">
+                            <label class="option-label">Layout Selection</label>
+                            <div class="layout-rush-row">
+                                <div class="layout-rush-checkbox"><input type="checkbox" id="layout-checkbox"><label for="layout-checkbox">Layout Required</label></div>
+                                <select class="select-input" id="layout-type">
+                                    <option value="no-layout">No layout</option>
+                                    <option value="own-layout">Own layout</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="flex:1;">
+                            <label class="option-label">Rush Order</label>
+                            <div class="layout-rush-row">
+                                <div class="layout-rush-checkbox"><input type="checkbox" id="rush-checkbox"><label for="rush-checkbox">Rush Order</label></div>
+                                <select class="select-input" id="rush-type">
+                                    <option value="7">7 days</option>
+                                    <option value="3">3 days</option>
+                                    <option value="1">1 day</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Location & Courier -->
+                <div style="display:flex;gap:12px;">
+                    <div style="flex:1;">
+                        <label class="option-label">Location</label>
+                        <select class="select-input" id="location-select">
+                            <option value="">Select location</option>
+                            <option value="ncr">NCR</option>
+                            <option value="north-luzon">North Luzon</option>
+                            <option value="central-luzon">Central Luzon</option>
+                            <option value="south-luzon">South Luzon</option>
+                            <option value="visayas">Visayas</option>
+                            <option value="mindanao">Mindanao</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label class="option-label">Courier</label>
+                        <select class="select-input" id="courier-select">
+                            <option value="spx" selected>SPX Express</option>
+                            <option value="jnt">J&T Express</option>
+                            <option value="lbc">LBC</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="button-row">
                     <button class="action-button reset-button" id="reset-button"><i class="fas fa-redo-alt"></i> Reset All</button>
                     <button class="action-button" id="print-button"><i class="fas fa-print"></i> Print</button>
                 </div>
+            <div class="section-divider"></div>
+                <div class="option-group">
+                    <label class="option-label">Import Quotation</label>
+                    <textarea class="text-input" id="import-textarea" rows="3" placeholder="Paste quotation text here..."></textarea>
+                    <button class="action-button" id="import-button" style="margin-top: 8px; width: 100%;">
+                        <i class="fas fa-file-import"></i> Import Quotation
+                    </button>
+                </div>
+            </div><!-- /tab-invitation -->
+            <div class="tab-panel" id="tab-passport">
+                <h2 class="section-title">Passport Invitation Options</h2>
+                <div class="discount-checkbox-row" style="margin-bottom:12px;">
+                    <div class="discount-checkbox"><input type="checkbox" id="passport-enabled"><label for="passport-enabled">Include passport invitation</label></div>
+                </div>
+                <div id="passport-options-content" style="display:none;">
+                <div class="discount-checkbox-row" style="margin-bottom:8px;">
+                    <div class="discount-checkbox"><input type="checkbox" id="passport-only-mode"><label for="passport-only-mode">Passport invitation only (hide invitation breakdown)</label></div>
+                </div>
+                <div class="option-group">
+                    <label class="option-label">Type</label>
+                    <div class="option-grid" id="passport-type-options">
+                        <div class="option-card selected" data-value="passport" data-price="80"><div class="option-name">Passport</div></div>
+                        <div class="option-card" data-value="passport-holder" data-price="95"><div class="option-name">Passport with holder</div></div>
+                    </div>
+                </div>
+                <div class="option-group" id="passport-holder-color-group" style="display:none;">
+                    <label class="option-label">Holder Color</label>
+                    <select class="select-input" id="passport-color-select" style="height: 40px; font-size: 15px; width: 200px;"></select>
+                </div>
+                <div class="option-group">
+                    <label class="option-label">Paper Type</label>
+                    <div class="option-grid" id="passport-paper-options">
+                        <div class="option-card selected" data-value="glossy" data-price="0"><div class="option-name">Glossy</div></div>
+                        <div class="option-card" data-value="matte" data-price="20"><div class="option-name">Matte</div></div>
+                    </div>
+                </div>
+                <div class="option-group">
+                    <label class="option-label">Insert Leaves (excludes cover)</label>
+                    <select class="select-input" id="passport-leaves-select" style="height: 40px; font-size: 15px; width: 200px;">
+                        <option value="2">2 leaves</option>
+                        <option value="4">4 leaves</option>
+                        <option value="6">6 leaves</option>
+                        <option value="8">8 leaves</option>
+                        <option value="10">10 leaves</option>
+                        <option value="12">12 leaves</option>
+                        <option value="14">14 leaves</option>
+                        <option value="16">16 leaves</option>
+                        <option value="18">18 leaves</option>
+                        <option value="20">20 leaves</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Passport Quantity</label>
+                    <input type="number" class="text-input" id="passport-sets-input" min="1" max="1000" value="20" oninput="this.value = Math.max(1, parseInt(this.value) || 1)">
+                </div>
+                <div class="option-group">
+                    <label class="option-label">Layout</label>
+                    <div class="layout-rush-row">
+                        <div class="layout-rush-checkbox"><input type="checkbox" id="passport-layout-checkbox"><label for="passport-layout-checkbox">Layout Required</label></div>
+                    </div>
+                </div>
+                <div class="option-group" id="passport-ribbon-group" style="display:none;">
+                    <label class="option-label">Ribbon (included with holder)</label>
+                    <select class="select-input" id="passport-ribbon-select" style="height: 40px; font-size: 15px; width: 200px;">
+                        <option value="">— Select ribbon —</option>
+                    </select>
+                </div>
+                </div><!-- /passport-options-content -->
+            </div><!-- /tab-passport -->
+            <div class="tab-panel" id="tab-souvenir">
+                <h2 class="section-title">Souvenir Options</h2>
+                <div id="souvenir-items"></div>
+                <button class="action-button reset-button" id="reset-souvenir-button" style="margin-top:10px; width:100%;"><i class="fas fa-redo-alt"></i> Reset Souvenirs</button>
+            </div><!-- /tab-souvenir -->
             </div>
             <div class="result-panel">
                 <div class="summary-container">
@@ -362,6 +458,8 @@
                         <div class="summary-line" id="summary-seal-line">No seal</div>
                         <div class="addons-summary" id="addons-summary"></div>
                         <div class="one-time-fees" id="one-time-fees"></div>
+                        <div class="one-time-fees" id="souvenir-breakdown" style="display:none;"></div>
+                        <div class="one-time-fees" id="passport-breakdown" style="display:none; border-top: 1px dashed #cccccc; margin-top: 8px; padding-top: 8px;"></div>
                         <div class="sets-total" id="sets-total">20 sets x ₱25 each = ₱500</div>
                     </div>
                     <div class="final-total" id="final-total">Total: ₱500</div>
@@ -371,13 +469,13 @@
                 </div>
             </div>
         </div>
-        <footer>
-            <p>Invitation Price Calculator &copy; <span id="current-year">2023</span> | All prices are per invitation set in Philippine Peso</p>
-            <p>Note: Additional charges may apply for rush orders, special printing techniques, or custom artwork.</p>
-        </footer>
     </div>
     <div class="notification" id="notification">Quotation copied to clipboard!</div>
     <div class="notification" id="price-notification" style="top: 70px;">Price summary copied to clipboard!</div>
+    <div class="mobile-price-bar" id="mobile-price-bar">
+        <div><span class="bar-price" id="mobile-bar-price">₱25 each</span><br><span class="bar-detail" id="mobile-bar-total">Total: ₱500</span></div>
+        <div class="bar-detail" id="mobile-bar-sets">20 sets</div>
+    </div>
     <script>
         const BASE_PRICE = 25;
         const INSERT_PRICE = 5;
@@ -385,15 +483,16 @@
             eventType: { value: "wedding", price: 0, name: "Wedding" },
             size: { value: "4r", price: 0, name: "4R" },
             envelope: { value: "plain-white", price: 0, name: "Plain white", custom: false, color: "", texture: "" },
-            inserts: { value: 0, price: 0 },
+            inserts: { value: 2, price: 10 },
             paper: { value: "matte", price: 0, name: "Matte" },
             seal: { value: "no-seal", price: 0, name: "No seal" },
             layout: { required: false, type: "no-layout", pages: 1 },
-            rush: { required: false, type: "no-layout" },
+            rush: { required: false, type: "7" },
             paymentMethod: "direct-shipping",
             addons: {},
             discount: false
         };
+        let courier = 'spx'; // spx, jnt, lbc
         let numberOfSets = 20;
         let eventDate = "";
         
@@ -406,35 +505,45 @@
             { id: 'custom-cut', name: 'Custom cut', price: 10, unit: 'page' },
 			            { id: 'arc-cut', name: 'Arc cut', price: 5, unit: 'page' },
             { id: 'photo-print', name: 'Photo print', price: 5, unit: 'page' },
-            { id: 'solid-color-print', name: 'Solid color print', price: 5, unit: 'page' },
+            { id: 'solid-color-print', name: 'Solid color print', price: 5, unit: 'page', dropdown: [
+                {label:'Light', price:5, rule:'light'}, {label:'Dark', price:5, rule:'dark'}, {label:'Black', price:5, rule:'black'}
+            ] },
             { id: 'vellum-jacket', name: 'Vellum jacket', price: 25, unit: 'flat' },
             { id: 'vellum-jacket-print', name: 'Vellum jacket with print', price: 35, unit: 'flat' },
             { id: 'frosted-insert', name: 'Frosted insert', price: 15, unit: 'page' },
             { id: 'different-sized-insert', name: 'Different sized insert', price: 5, unit: 'flat' },
             { id: 'back-to-back-print', name: 'Back to back print', price: 5, unit: 'page' },
-            { id: 'ribbon-addon', name: 'Ribbon', price: 10, unit: 'flat' },
+            { id: 'ribbon-addon', name: 'Ribbon', price: 10, unit: 'flat', dropdown: ['Gold','Green','Copper','White','Blue','Torquoise','Emerald Green','Fiery red','Wine red','Pastel Purple','Very Light Purple','Marbled Lilac','Rust','Red','Dusty Pink','Middle Green','Ivory','Grass green','Pomelo','Black','Sage green','Aurora green','Amethyst','Powder blue','Mauvelous Pink','Yellow Gold','Midnight Blue','Rosegold','Maroon','Old Rose','Royal blue','Navy Blue','Silver','Champagne gold','Champagne','Pink','Dark Brown','Light blue','Olive green','Cream','Forest green','Dusty blue','Light pink','Aqua blue','Medium pink','Avocado green','Brown','Burgundy','Blush pink','Lavender','Cerulean','Teal green','Silver Grey','Copper Rust','Red Maroon','Aquamarine'] },
             { id: 'sticker-seal-addon', name: 'Sticker seal', price: 3, unit: 'flat' },
             { id: 'eyelet', name: 'Eyelet', price: 10, unit: 'piece' },
-            { id: 'glossy-phototop', name: 'Glossy phototop', price: 20, unit: 'page' },
-            { id: 'matte-phototop', name: 'Matte phototop', price: 20, unit: 'page' },
-            { id: 'leather-phototop', name: 'Leather phototop', price: 25, unit: 'page' },
-            { id: 'glitter-phototop', name: 'Glitter phototop', price: 25, unit: 'page' },
-            { id: 'metal-pin', name: 'Metal pin', price: 5, unit: 'piece' },
+            { id: 'phototop', name: 'Phototop', unit: 'page', dropdown: [
+                {label: 'Glossy', price: 20}, {label: 'Matte', price: 20}, {label: 'Leather', price: 25}, {label: 'Glitter', price: 25}
+            ]},
+            { id: 'metal-pin', name: 'Metal pin', price: 5, unit: 'piece', dropdown: ['Gold', 'Silver', 'Rosegold', 'Black'] },
             { id: 'sticker-names', name: 'Sticker names', price: 10, unit: 'piece' },
-            { id: 'calendar-foil', name: 'Calendar foil', price: 25, unit: 'flat' },
+            { id: 'calendar-foil', name: 'Calendar foil', price: 25, unit: 'flat', dropdown: ['Gold', 'Silver', 'Rosegold'] },
             { id: 'folded-insert', name: 'Folded insert', price: 5, unit: 'flat' },
             { id: 'trifold-insert', name: 'Trifold insert', price: 10, unit: 'flat' },
             { id: 'liner', name: 'Liner', price: 20, unit: 'flat' },
-			{ id: 'decals', name: 'Decals', price: 15, unit: 'piece' },
-            { id: 'gold-foil', name: 'Gold foil', price: 15, unit: 'page' },
-            { id: 'silver-foil', name: 'Silver foil', price: 15, unit: 'page' },			
-            { id: 'rosegold-foil', name: 'Rosegold foil', price: 15, unit: 'page' },			
-            { id: 'gold-foil-full-page', name: 'Gold foil full page', price: 20, unit: 'page' },
-            { id: 'silver-foil-full-page', name: 'Silver foil full page', price: 20, unit: 'page' },			
-            { id: 'rosegold-foil-full-page', name: 'Rosegold foil full page', price: 20, unit: 'page' },
-			{ id: 'envelope-print', name: 'Envelope print', price: 10, unit: 'flat' },
-			{ id: 'website', name: 'Website', price: 599, unit: 'flat' },
-			{ id: 'website-RSVP', name: 'Website with RSVP', price: 699, unit: 'flat' }
+			{ id: 'decals', name: 'Decals', unit: 'piece', dropdown: [{label:'₱10',price:10},{label:'₱15',price:15},{label:'₱20',price:20},{label:'₱25',price:25},{label:'₱30',price:30}] },
+			{ id: 'foil', name: 'Foil', price: 15, unit: 'page', dropdown: ['Gold', 'Silver', 'Rosegold'] },
+            { id: 'envelope-print', name: 'Envelope print', price: 15, unit: 'piece' },
+			{ id: 'website', name: 'Website', unit: 'flat', dropdown: [
+			    {label:'No RSVP (Sample 1)', price:599}, {label:'With RSVP (Sample 1)', price:699},
+			    {label:'No RSVP (Sample 2)', price:899}, {label:'With RSVP (Sample 2)', price:999}
+			]},
+			{ id: 'e-invite', name: 'E-invite', price: 100, unit: 'flat' },
+			{ id: 'sketch', name: 'Sketch', unit: 'flat', dropdown: [{label:'₱50',price:50},{label:'₱100',price:100},{label:'₱150',price:150},{label:'₱200',price:200}] },
+			{ id: 'envelope-addon', name: 'Envelope add-on', unit: 'page', dropdown: [{label:'₱5',price:5},{label:'₱10',price:10},{label:'₱15',price:15},{label:'₱20',price:20},{label:'₱25',price:25},{label:'₱30',price:30},{label:'₱35',price:35},{label:'₱40',price:40},{label:'₱45',price:45},{label:'₱50',price:50}] },
+			{ id: 'monogram', name: 'Monogram', unit: 'flat', dropdown: [
+			    {label:'Simple design (letters only)', price:100},
+			    {label:'With custom design', price:150},
+			    {label:'With animated background', price:150},
+			    {label:'Custom + animated background', price:200},
+			    {label:'With graphics', price:200},
+			    {label:'With animated monogram/logo', price:200},
+			    {label:'All features', price:400}
+			]}
             
 
         ];
@@ -462,21 +571,432 @@
             'mindanao': 'Mindanao'
         };
         
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('current-year').textContent = new Date().getFullYear();
+        // === Tab switching ===
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+        
+        // === Souvenir data ===
+        const souvenirData = [
+            {
+                id: 'money-envelope', name: 'Money Envelope', unit: 'piece',
+                options: [
+                    {label: 'Simple print', price: 10},
+                    {label: 'With QR', price: 15},
+                    {label: 'Light color', price: 15},
+                    {label: 'Dark color', price: 20}
+                ]
+            },
+            {
+                id: 'vow-cards', name: 'Vow Cards', unit: 'pair',
+                options: [
+                    {label: 'B&W Folded card only', price: 60},
+                    {label: 'B&W With insert', price: 70},
+                    {label: 'B&W Card only with ribbon', price: 80},
+                    {label: 'B&W With insert and ribbon', price: 90},
+                    {label: 'Colored Folded card only', price: 90},
+                    {label: 'Colored With insert', price: 100},
+                    {label: 'Colored Card only with ribbon', price: 110},
+                    {label: 'Colored With insert and ribbon', price: 120},
+                    {label: 'B2B Cover Print Folded card only', price: 120},
+                    {label: 'B2B Cover Print With insert', price: 130},
+                    {label: 'B2B Cover Print Card only with ribbon', price: 140},
+                    {label: 'B2B Cover Print With insert and ribbon', price: 150}
+                ]
+            },
+            {
+                id: 'gift-tag', name: 'Gift Tag', unit: 'piece',
+                options: [
+                    {label: 'No hole', price: 5},
+                    {label: 'With hole', price: 5},
+                    {label: 'With string', price: 8},
+                    {label: 'With eyelet', price: 10},
+                    {label: 'With eyelet and string', price: 13}
+                ]
+            },
+            {
+                id: 'wedding-fan', name: 'Wedding Fan', unit: 'piece',
+                options: [
+                    {label: 'Plain', price: 35},
+                    {label: 'Colored', price: 40}
+                ]
+            }
+        ];
+        
+        // Current souvenir selections: { id: { variant, price, qty } }
+        let currentSouvenirs = {};
+        
+        function renderSouvenirs() {
+            const container = document.getElementById('souvenir-items');
+            container.innerHTML = '';
+            souvenirData.forEach(s => {
+                const item = document.createElement('div');
+                item.className = 'souvenir-item';
+                const opts = s.options.map(o => {
+                    return `<option value="${o.label}" data-price="${o.price}">${o.label}</option>`;
+                }).join('');
+                const saved = currentSouvenirs[s.id];
+                item.innerHTML = `
+                    <span class="souvenir-name">${s.name}</span>
+                    <select class="select-input" id="souv-${s.id}" style="flex:1; min-width:200px; height:32px; font-size:0.85rem; padding:4px 8px; line-height:1.4;" onchange="updateSouvenir('${s.id}')">
+                        <option value="">— Select —</option>
+                        ${opts}
+                    </select>
+                    <span style="font-size:0.85rem;">Qty:</span>
+                    <input type="number" class="souvenir-qty" id="souv-qty-${s.id}" min="0" value="${saved ? saved.qty : 0}" onchange="updateSouvenir('${s.id}')" oninput="this.value = Math.max(0, parseInt(this.value) || 0)">
+                    <span class="souvenir-total" id="souv-total-${s.id}">₱0</span>
+                `;
+                container.appendChild(item);
+                if (saved) {
+                    document.getElementById('souv-' + s.id).value = saved.variant;
+                }
+            });
+            recalcSouvenirs();
+        }
+        
+        function updateSouvenir(id) {
+            const sel = document.getElementById('souv-' + id);
+            const qty = parseInt(document.getElementById('souv-qty-' + id).value) || 0;
+            if (sel.value && qty > 0) {
+                const price = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price'));
+                currentSouvenirs[id] = { variant: sel.value, price: price, qty: qty };
+            } else {
+                delete currentSouvenirs[id];
+            }
+            recalcSouvenirs();
+            updateSummary();
+            saveToLocalStorage();
+        }
+        
+        function recalcSouvenirs() {
+            let total = 0;
+            souvenirData.forEach(s => {
+                const saved = currentSouvenirs[s.id];
+                const totalEl = document.getElementById('souv-total-' + s.id);
+                if (saved && saved.qty > 0) {
+                    const sub = saved.price * saved.qty;
+                    totalEl.textContent = '₱' + sub;
+                    total += sub;
+                } else {
+                    totalEl.textContent = '₱0';
+                }
+            });
+            return total;
+        }
+        
+        function getSouvenirBreakdown() {
+            let html = '';
+            Object.keys(currentSouvenirs).forEach(id => {
+                const s = currentSouvenirs[id];
+                if (s.qty > 0) {
+                    const item = souvenirData.find(d => d.id === id);
+                    html += `<div class="summary-line">${item.name} (${s.variant})</div>`;
+                    html += `<div class="summary-line">${s.qty} ${item.unit}${s.qty > 1 ? 's' : ''} x ₱${s.price} each = ₱${s.price * s.qty}</div>`;
+                }
+            });
+            return html;
+        }
+        
+        function getSouvenirCopyText() {
+            let text = '';
+            Object.keys(currentSouvenirs).forEach(id => {
+                const s = currentSouvenirs[id];
+                if (s.qty > 0) {
+                    const item = souvenirData.find(d => d.id === id);
+                    text += `${item.name} (${s.variant})\n`;
+                    text += `${s.qty} ${item.unit}${s.qty > 1 ? 's' : ''} x ₱${s.price} each = ₱${s.price * s.qty}\n`;
+                }
+            });
+            return text;
+        }
+        
+        // === Passport state ===
+        let passportSelection = {
+            type: 'passport', basePrice: 80, name: 'Passport',
+            paper: 'glossy', paperPrice: 0, paperName: 'Glossy',
+            leaves: 2, leafExtra: 0,
+            color: '', ribbon: ''
+        };
+        let passportOnlyMode = false;
+        let passportSets = 20;
+        
+        const passportRibbons = ['Gold','Green','Copper','White','Blue','Torquoise','Emerald Green','Fiery red','Wine red','Pastel Purple','Very Light Purple','Marbled Lilac','Rust','Red','Dusty Pink','Middle Green','Ivory','Grass green','Pomelo','Black','Sage green','Aurora green','Amethyst','Powder blue','Mauvelous Pink','Yellow Gold','Midnight Blue','Rosegold','Maroon','Old Rose','Royal blue','Navy Blue','Silver','Champagne gold','Champagne','Pink','Dark Brown','Light blue','Olive green','Cream','Forest green','Dusty blue','Light pink','Aqua blue','Medium pink','Avocado green','Brown','Burgundy','Blush pink','Lavender','Cerulean','Teal green','Silver Grey','Copper Rust','Red Maroon','Aquamarine'];
+        
+        function setupPassport() {
+            // Enable/disable toggle
+            document.getElementById('passport-enabled').addEventListener('change', function() {
+                const show = this.checked;
+                document.getElementById('passport-options-content').style.display = show ? 'block' : 'none';
+                passportSelection.enabled = show;
+                updateSummary();
+                saveToLocalStorage();
+            });
             
-            // Try to load saved data from localStorage
+            // Type cards
+            document.querySelectorAll('#passport-type-options .option-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    document.querySelectorAll('#passport-type-options .option-card').forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    passportSelection.type = this.getAttribute('data-value');
+                    passportSelection.basePrice = parseInt(this.getAttribute('data-price'));
+                    passportSelection.name = this.querySelector('.option-name').textContent;
+                    const isHolder = passportSelection.type === 'passport-holder';
+                    document.getElementById('passport-holder-color-group').style.display = isHolder ? 'block' : 'none';
+                    document.getElementById('passport-ribbon-group').style.display = isHolder ? 'block' : 'none';
+                    if (!isHolder) { passportSelection.color = ''; passportSelection.ribbon = ''; }
+                    updatePassportSummary();
+                });
+            });
+            
+            // Paper cards
+            document.querySelectorAll('#passport-paper-options .option-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    document.querySelectorAll('#passport-paper-options .option-card').forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    passportSelection.paper = this.getAttribute('data-value');
+                    passportSelection.paperPrice = parseInt(this.getAttribute('data-price'));
+                    passportSelection.paperName = this.querySelector('.option-name').textContent;
+                    updatePassportSummary();
+                });
+            });
+            
+            // Leaves dropdown
+            document.getElementById('passport-leaves-select').addEventListener('change', function() {
+                passportSelection.leaves = parseInt(this.value);
+                passportSelection.leafExtra = Math.max(0, (passportSelection.leaves - 2) / 2) * 10;
+                updatePassportSummary();
+            });
+            
+            // Passport quantity
+            passportSets = passportSelection.sets || 20;
+            document.getElementById('passport-sets-input').value = passportSets;
+            document.getElementById('passport-sets-input').addEventListener('input', function() {
+                passportSets = Math.max(1, parseInt(this.value) || 1);
+                passportSelection.sets = passportSets;
+                updatePassportSummary();
+                saveToLocalStorage();
+            });
+            
+            // Layout checkbox
+            document.getElementById('passport-layout-checkbox').addEventListener('change', function() {
+                updatePassportSummary();
+                saveToLocalStorage();
+            });
+            
+            // Populate color dropdown from invitation colors
+            syncPassportColors();
+            
+            // Listen for invitation color changes to sync
+            document.getElementById('color-select').addEventListener('change', function() {
+                syncPassportColors();
+                if (passportSelection.type === 'passport-holder') {
+                    document.getElementById('passport-color-select').value = this.value;
+                    passportSelection.color = this.value;
+                    updatePassportSummary();
+                    saveToLocalStorage();
+                }
+            });
+            
+            // Passport color change
+            document.getElementById('passport-color-select').addEventListener('change', function() {
+                passportSelection.color = this.value;
+                updatePassportSummary();
+                saveToLocalStorage();
+            });
+            
+            // Populate ribbon dropdown
+            passportRibbons.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r; opt.textContent = r;
+                document.getElementById('passport-ribbon-select').appendChild(opt);
+            });
+            
+            // Passport ribbon change
+            document.getElementById('passport-ribbon-select').addEventListener('change', function() {
+                passportSelection.ribbon = this.value;
+                updatePassportSummary();
+                saveToLocalStorage();
+            });
+            
+            // Restore saved passport state
+            restorePassportUI();
+        }
+        
+        function restorePassportUI() {
+            if (!passportSelection.type) return;
+            // Restore enabled state
+            const enabled = passportSelection.enabled;
+            document.getElementById('passport-enabled').checked = !!enabled;
+            document.getElementById('passport-options-content').style.display = enabled ? 'block' : 'none';
+            // Restore type
+            document.querySelectorAll('#passport-type-options .option-card').forEach(c => {
+                c.classList.toggle('selected', c.getAttribute('data-value') === passportSelection.type);
+            });
+            // Restore paper
+            document.querySelectorAll('#passport-paper-options .option-card').forEach(c => {
+                c.classList.toggle('selected', c.getAttribute('data-value') === passportSelection.paper);
+            });
+            // Restore leaves
+            document.getElementById('passport-leaves-select').value = passportSelection.leaves;
+            // Restore passport quantity
+            document.getElementById('passport-sets-input').value = passportSets;
+            // Restore color and ribbon
+            const isHolder = passportSelection.type === 'passport-holder';
+            document.getElementById('passport-holder-color-group').style.display = isHolder ? 'block' : 'none';
+            document.getElementById('passport-ribbon-group').style.display = isHolder ? 'block' : 'none';
+            if (isHolder) {
+                if (passportSelection.color) document.getElementById('passport-color-select').value = passportSelection.color;
+                if (passportSelection.ribbon) document.getElementById('passport-ribbon-select').value = passportSelection.ribbon;
+            }
+        }
+        
+        function syncPassportColors() {
+            const invColor = document.getElementById('color-select');
+            const passColor = document.getElementById('passport-color-select');
+            passColor.innerHTML = '';
+            const emptyOpt = document.createElement('option');
+            emptyOpt.value = ''; emptyOpt.textContent = 'Select color';
+            passColor.appendChild(emptyOpt);
+            for (let i = 1; i < invColor.options.length; i++) {
+                const opt = document.createElement('option');
+                opt.value = invColor.options[i].value;
+                opt.textContent = invColor.options[i].textContent;
+                passColor.appendChild(opt);
+            }
+            // Restore if had selection
+            if (passportSelection.color) passColor.value = passportSelection.color;
+        }
+        
+        function updatePassportSummary() {
+            updateSummary();
+        }
+        
+        function getPassportTotal() {
+            if (!passportSelection.enabled || !passportSelection.type) return { perSet: 0, setsTotal: 0, layoutFee: 0, grandTotal: 0 };
+            const perSet = passportSelection.basePrice + passportSelection.paperPrice + passportSelection.leafExtra;
+            const setsTotal = perSet * (passportSets || numberOfSets);
+            // Layout fee: 100 + 100 * (cover 2 + insert leaves)
+            const baseLayoutFee = 100 + (100 * (2 + passportSelection.leaves));
+            const layoutRequired = document.getElementById('passport-layout-checkbox').checked;
+            let layoutFee = 0;
+            let layoutLabel = '';
+            if (layoutRequired) {
+                layoutFee = baseLayoutFee;
+                layoutLabel = 'Layout fee';
+            } else if ((passportSets || numberOfSets) >= 20) {
+                layoutLabel = 'FREE layout';
+            } else {
+                layoutFee = baseLayoutFee;
+                layoutLabel = 'Layout fee';
+            }
+            return { perSet, setsTotal, layoutFee, grandTotal: setsTotal + layoutFee, layoutLabel, baseLayoutFee };
+        }
+        
+        function getPassportBreakdown() {
+            const t = getPassportTotal();
+            if (!passportSelection.enabled || t.grandTotal <= 0) return '';
+            let html = `<div class="summary-line"><strong>Passport invitation</strong></div>`;
+            html += `<div class="summary-line">${passportSelection.name}</div>`;
+            if (passportSelection.color) html += `<div class="summary-line">${passportSelection.color} holder</div>`;
+            html += `<div class="summary-line">3R size</div>`;
+            html += `<div class="summary-line">${passportSelection.paperName} paper</div>`;
+            html += `<div class="summary-line">${passportSelection.leaves} leaves</div>`;
+            if (passportSelection.ribbon && passportSelection.type === 'passport-holder') html += `<div class="summary-line">${passportSelection.ribbon} Ribbon</div>`;
+            html += `<div style="margin-top: 6px; font-weight: 600;">${passportSets} sets x ₱${t.perSet} each = ₱${t.setsTotal}</div>`;
+            html += `<div class="summary-line">${t.layoutLabel}${t.layoutFee > 0 ? ': ₱' + t.layoutFee : ''}</div>`;
+            html += `<div style="font-weight: 600;">Passport Total: ₱${t.grandTotal}</div>`;
+            return html;
+        }
+        
+        function getPassportCopyText() {
+            const t = getPassportTotal();
+            if (!passportSelection.enabled || t.grandTotal <= 0) return '';
+            let text = 'Passport invitation\n\n';
+            text += `₱${t.perSet} each\n\n`;
+            text += `${passportSelection.name}\n`;
+            if (passportSelection.color) text += `${passportSelection.color} holder\n`;
+            text += `3R size\n`;
+            text += `${passportSelection.paperName} paper\n`;
+            text += `${passportSelection.leaves} leaves\n`;
+            if (passportSelection.ribbon && passportSelection.type === 'passport-holder') text += `${passportSelection.ribbon} Ribbon\n`;
+            text += `\n${passportSets} sets x ₱${t.perSet} each = ₱${t.setsTotal}\n`;
+            text += `${t.layoutLabel}${t.layoutFee > 0 ? ': ₱' + t.layoutFee : ''}\n\n`;
+            text += `Passport Total: ₱${t.grandTotal}`;
+            return text;
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+                        // Try to load saved data from localStorage
             loadSavedData();
             
-            setupOptionCards('event-type-options', 'eventType', true);
-            setupOptionCards('size-options', 'size');
-            setupOptionCards('envelope-options', 'envelope');
-            setupOptionCards('paper-options', 'paper');
-            setupOptionCards('seal-options', 'seal');
-            setupOptionCards('payment-method-options', 'paymentMethod', false, true);
-            
+            // Event type select
+            document.getElementById('event-type-select').addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                currentSelections.eventType = { value: this.value, price: parseInt(opt.getAttribute('data-price')), name: opt.text };
+                updateEventTypeTitle();
+                updateSummary();
+                saveToLocalStorage();
+            });
+            // Size select
+            document.getElementById('size-select').addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                currentSelections.size = { value: this.value, price: parseInt(opt.getAttribute('data-price')), name: opt.text };
+                updateSummary();
+                saveToLocalStorage();
+            });
+            // Envelope select
+            document.getElementById('envelope-select').addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                currentSelections.envelope = { value: this.value, price: parseInt(opt.getAttribute('data-price')), name: opt.text, custom: false, color: "", texture: "" };
+                updateSummary();
+                saveToLocalStorage();
+            });
+            // Paper select
+            document.getElementById('paper-select').addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                currentSelections.paper = { value: this.value, price: parseInt(opt.getAttribute('data-price')), name: opt.text };
+                updateSummary();
+                saveToLocalStorage();
+            });
+            // Seal select
+            document.getElementById('seal-select').addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                currentSelections.seal = { value: this.value, price: parseInt(opt.getAttribute('data-price')), name: opt.text };
+                updateSummary();
+                saveToLocalStorage();
+            });
             // Initialize add-ons
             initializeAddons();
+            
+            // Initialize souvenir items
+            renderSouvenirs();
+            
+            // Reset souvenir button
+            document.getElementById('reset-souvenir-button').addEventListener('click', function() {
+                currentSouvenirs = {};
+                renderSouvenirs();
+                updateSummary();
+                saveToLocalStorage();
+            });
+            
+            // Initialize passport tab
+            setupPassport();
+            
+            // Passport-only mode toggle
+            document.getElementById('passport-only-mode').addEventListener('change', function() {
+                passportOnlyMode = this.checked;
+                if (this.checked && !passportSelection.enabled) {
+                    // Auto-enable passport when passport-only is checked
+                    document.getElementById('passport-enabled').checked = true;
+                    passportSelection.enabled = true;
+                    document.getElementById('passport-options-content').style.display = 'block';
+                }
+                updateSummary();
+                saveToLocalStorage();
+            });
             
            document.getElementById('envelope-checkbox').addEventListener('change', function() {
                 currentSelections.envelope.custom = this.checked;
@@ -496,10 +1016,9 @@
                 saveToLocalStorage();
             });
 			
-			document.getElementById('inserts-slider').addEventListener('input', function() {
-                const insertCount = parseInt(this.value);
+			document.getElementById('inserts-input').addEventListener('input', function() {
+                const insertCount = parseInt(this.value) || 0;
                 const insertPrice = insertCount * INSERT_PRICE;
-                document.getElementById('inserts-value').textContent = `${insertCount} insert${insertCount !== 1 ? 's' : ''}`;
                 currentSelections.inserts = { value: insertCount, price: insertPrice };
                 updateSummary();
                 saveToLocalStorage();
@@ -553,6 +1072,12 @@
                 saveToLocalStorage();
             });
             
+            document.getElementById('courier-select').addEventListener('change', function() {
+                courier = this.value;
+                updateSummary();
+                saveToLocalStorage();
+            });
+            
             document.getElementById('reset-button').addEventListener('click', resetSelections);
             document.getElementById('print-button').addEventListener('click', printQuote);
             document.getElementById('copy-button').addEventListener('click', copyQuotation);
@@ -595,59 +1120,90 @@
         }
         
         function initializeAddons() {
-            const addonsGrid = document.getElementById('addons-grid');
-            
+            const picker = document.getElementById('addon-picker');
             addonsData.forEach(addon => {
-                const addonItem = document.createElement('div');
-                addonItem.className = 'addon-item';
-                addonItem.innerHTML = `
-                    <div class="addon-header">
-                        <input type="checkbox" class="addon-checkbox" id="addon-${addon.id}" data-id="${addon.id}" data-price="${addon.price}" data-unit="${addon.unit}">
-                        <label class="addon-name" for="addon-${addon.id}">${addon.name}</label>
-                    </div>
-                    ${addon.unit !== 'flat' ? 
-                        `<div class="addon-option">
-                            <label>${addon.unit === 'page' ? 'Pages' : 'Pieces'}:</label>
-                            <input type="number" class="addon-input" id="qty-${addon.id}" min="1" max="100" value="1" disabled>
-                        </div>` 
-                        : ''}
-                `;
-                addonsGrid.appendChild(addonItem);
-                
-                // Add event listeners for checkbox
-                const checkbox = addonItem.querySelector('.addon-checkbox');
-                const quantityInput = addonItem.querySelector('.addon-input');
-                
-                checkbox.addEventListener('change', function() {
-                    if (this.checked) {
-                        if (quantityInput) quantityInput.disabled = false;
-                        currentSelections.addons[addon.id] = {
-                            name: addon.name,
-                            price: addon.price,
-                            unit: addon.unit,
-                            quantity: quantityInput ? parseInt(quantityInput.value) || 1 : 1
-                        };
-                    } else {
-                        if (quantityInput) {
-                            quantityInput.disabled = true;
-                            quantityInput.value = 1;
-                        }
-                        delete currentSelections.addons[addon.id];
-                    }
-                    updateSummary();
-                    saveToLocalStorage();
-                });
-                
-                // Add event listener for quantity input
-                if (quantityInput) {
-                    quantityInput.addEventListener('input', function() {
-                        if (checkbox.checked) {
-                            currentSelections.addons[addon.id].quantity = parseInt(this.value) || 1;
-                            updateSummary();
-                            saveToLocalStorage();
-                        }
-                    });
+                const opt = document.createElement('option');
+                opt.value = addon.id;
+                opt.textContent = addon.name;
+                picker.appendChild(opt);
+            });
+            
+            document.getElementById('add-addon-button').addEventListener('click', addSelectedAddon);
+            picker.addEventListener('change', addSelectedAddon);
+            
+            function addSelectedAddon() {
+                const addonId = picker.value;
+                if (!addonId) return;
+                if (currentSelections.addons[addonId]) return;
+                const addon = addonsData.find(a => a.id === addonId);
+                if (!addon) return;
+                currentSelections.addons[addonId] = {
+                    name: addon.name,
+                    price: addon.price,
+                    unit: addon.unit,
+                    quantity: addon.id === 'solid-color-print' ? currentSelections.inserts.value : 1,
+                    variant: null,
+                    isPriceDropdown: addon.dropdown && typeof addon.dropdown[0] === 'object',
+                    hasDropdown: addon.dropdown && addon.dropdown.length > 0,
+                    dropdown: addon.dropdown
+                };
+                picker.value = '';
+                renderSelectedAddons();
+                updateSummary();
+                saveToLocalStorage();
+            }
+            renderSelectedAddons();
+        }
+        
+        function renderSelectedAddons() {
+            const list = document.getElementById('selected-addons-list');
+            list.innerHTML = '';
+            Object.keys(currentSelections.addons).forEach(addonId => {
+                const addon = currentSelections.addons[addonId];
+                const orig = addonsData.find(a => a.id === addonId);
+                if (!orig) return;
+                const hasDropdown = addon.hasDropdown || (orig.dropdown && orig.dropdown.length > 0);
+                const isPriceDropdown = addon.isPriceDropdown || (orig.dropdown && typeof orig.dropdown[0] === 'object');
+                const item = document.createElement('div');
+                item.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px;border:1px solid #e0e0e0;border-radius:4px;margin-bottom:6px;background:#f9f9f9;';
+                let h = `<strong style="min-width:100px;">${addon.name}</strong>`;
+                if (hasDropdown) {
+                    const dd = addon.dropdown || orig.dropdown;
+                    const opts = typeof dd[0] === 'object'
+                        ? dd.map(o => `<option value="${o.label}" data-price="${o.price}">${o.label}</option>`).join('')
+                        : dd.map(v => `<option value="${v}">${v}</option>`).join('');
+                    h += `<select class="select-input" id="variant-${addonId}" style="flex:1;min-width:140px;height:34px;font-size:0.85rem;">${opts}</select>`;
                 }
+                if (orig.unit === 'page') h += `<label>Pages:</label><input type="number" id="qty-${addonId}" value="${addon.quantity||1}" style="width:60px;text-align:center;" min="1">`;
+                else if (orig.unit === 'piece') h += `<label>Pcs:</label><input type="number" id="qty-${addonId}" value="${addon.quantity||1}" style="width:60px;text-align:center;" min="1">`;
+                if (addonId === 'foil' || addonId === 'envelope-print') h += `<label><input type="checkbox" id="fullpage-${addonId}" ${addon.fullPage?'checked':''} style="vertical-align:middle;"> Full page</label>`;
+                h += `<button style="padding:4px 10px;background:#e74c3c;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:0.8rem;">✕</button>`;
+                item.innerHTML = h;
+                list.appendChild(item);
+                const vs = item.querySelector('select');
+                if (vs && !addon.variant) { addon.variant = vs.value; if (isPriceDropdown) addon.price = parseInt(vs.options[vs.selectedIndex].getAttribute('data-price')); updateSummary(); }
+                if (vs && addon.variant) vs.value = addon.variant;
+                if (vs) vs.addEventListener('change', function() {
+                    addon.variant = this.value;
+                    if (isPriceDropdown) addon.price = parseInt(this.options[this.selectedIndex].getAttribute('data-price'));
+                    updateSummary(); saveToLocalStorage();
+                });
+                const qi = item.querySelector('input[type="number"]');
+                if (qi) qi.addEventListener('input', function() {
+                    addon.quantity = Math.max(1, parseInt(this.value) || 1);
+                    updateSummary(); saveToLocalStorage();
+                });
+                item.querySelector('button').addEventListener('click', function() {
+                    delete currentSelections.addons[addonId];
+                    renderSelectedAddons();
+                    updateSummary(); saveToLocalStorage();
+                });
+                const fp = item.querySelector('input[type="checkbox"]');
+                if (fp) fp.addEventListener('change', function() {
+                    addon.fullPage = this.checked;
+                    addon.price = this.checked ? 20 : 15;
+                    updateSummary(); saveToLocalStorage();
+                });
             });
         }
         
@@ -666,25 +1222,45 @@
                 document.getElementById('event-date-display').textContent = ``;
             }
         }
-        
         function calculateAddonsTotal() {
+            const numberOfSets = parseInt(document.getElementById('sets-input').value) || 0;
             let total = 0;
             let summaryHTML = '';
             
             Object.keys(currentSelections.addons).forEach(addonId => {
                 const addon = currentSelections.addons[addonId];
+                const getAddonDisplayName = (a) => {
+                    const base = a.variant ? `${a.variant} ${a.name}` : a.name;
+                    return a.fullPage && addonId !== 'foil' ? `Full page ${base.toLowerCase()}` : base;
+                };
                 let addonTotal = 0;
                 
                 if (addon.unit === 'flat') {
-                    addonTotal = addon.price;
-                    // Show all flat add-ons in the main summary (they will be moved to one-time fees if needed)
-                    summaryHTML += `<div class="summary-line">${addon.name}</div>`;
+                    if (addonId === 'e-invite') {
+                        // E-invite price = P100 × number of inserts (shown in one-time fees only)
+                        addonTotal = addon.price * currentSelections.inserts.value;
+                    } else {
+                        addonTotal = addon.price;
+                        if (flatAddonsInPricePerSet.includes(addonId)) {
+                            summaryHTML += `<div class="summary-line">${getAddonDisplayName(addon)}</div>`;
+                        }
+                    }
                 } else if (addon.unit === 'page' || addon.unit === 'piece') {
-                    addonTotal = addon.price * addon.quantity * numberOfSets;
-                    // Format: "X page(s)/pc(s) Addon Name" with correct grammar
+                    if (addonId === 'solid-color-print' && addon.variant) {
+                        addon.price = calculateSolidColorPrice(addon.variant, addon.quantity || 1) / (addon.quantity || 1);
+                    }
+                    if (addonId === 'envelope-print') {
+                        addonTotal = addon.price * addon.quantity;
+                    } else {
+                        addonTotal = addon.price * addon.quantity * numberOfSets;
+                    }
                     const unitText = addon.unit === 'page' ? (addon.quantity === 1 ? 'page' : 'pages') : 
                                     (addon.quantity === 1 ? 'pc' : 'pcs');
-                    summaryHTML += `<div class="summary-line">${addon.quantity} ${unitText} ${addon.name}</div>`;
+                    if (addonId === 'foil' && addon.fullPage) {
+                        summaryHTML += `<div class="summary-line">1 page ${getAddonDisplayName(addon)} full page</div>`;
+                    } else if (addonId !== 'envelope-print') {
+                        summaryHTML += `<div class="summary-line">${addon.quantity} ${unitText} ${getAddonDisplayName(addon)}</div>`;
+                    }
                 }
                 
                 total += addonTotal;
@@ -694,14 +1270,41 @@
             return total;
         }
         
+        // Solid color print pricing
+        function calculateSolidColorPrice(variant, inserts) {
+            if (!variant) return 5;
+            const pages = inserts;
+            const rule = { light: (p) => p <= 2 ? 0 : Math.ceil((p - 2) / 4) * 5,
+                dark: (p) => Math.ceil(p / 2) * 5,
+                black: (p) => p * 5
+            };
+            const variantKey = variant.label || variant;
+            return (rule[variantKey.toLowerCase()] || (() => 5))(pages);
+        }
+        
         function calculateShippingFee(totalAmount) {
-            if (totalAmount >= 6000) {
-                return 0; // FREE shipping
-            } else if (totalAmount >= 3000) {
-                return 50; // ₱50 shipping
-            } else {
-                return 100; // ₱100 shipping
+            // Courier base prices
+            const courierPrices = { 'spx': 100, 'jnt': 150, 'lbc': 200 };
+            let baseFee = courierPrices[courier] || 100;
+            
+            // Order total multiplier (not applicable to LBC)
+            let totalMultiplier = 1;
+            if (courier !== 'lbc') {
+                if (totalAmount >= 6000) totalMultiplier = 0;
+                else if (totalAmount >= 3000) totalMultiplier = 0.5;
             }
+            
+            // Apply location multiplier
+            const locationMultipliers = {
+                'ncr': 1,
+                'central-luzon': 1,
+                'north-luzon': 1.25,
+                'south-luzon': 1.25,
+                'visayas': 1.5,
+                'mindanao': 1.5
+            };
+            const multiplier = locationMultipliers[currentSelections.location] || 1;
+            return Math.round(baseFee * totalMultiplier * multiplier);
         }
         
         function calculateFreeSetsForDirectShipping(setsCount) {
@@ -756,14 +1359,6 @@
             // Calculate add-ons total
             calculateAddonsTotal();
             
-            // Calculate additional pages for inserts more than 4
-            let additionalPagesText = "";
-            const insertsCount = currentSelections.inserts.value;
-            if (insertsCount > 4) {
-                const additionalPages = insertsCount - 4;
-                additionalPagesText = `${additionalPages} page${additionalPages > 1 ? 's' : ''} add`;
-            }
-            
             // Calculate layout fee based on number of inserts (pages)
             const numberOfPages = currentSelections.inserts.value + 1; // Base invitation + inserts
             
@@ -806,13 +1401,12 @@
             let rushFee = 0;
             let rushSummary = "";
             if (currentSelections.rush.required) {
-                if (currentSelections.rush.type === "own-layout") {
-                    rushFee = 10 * numberOfSets;
-                    rushSummary = `Rush fee: ₱${rushFee}`;
-                } else if (currentSelections.rush.type === "no-layout") {
-                    rushFee = 100 + (10 * numberOfSets);
-                    rushSummary = `Rush fee: ₱${rushFee}`;
-                }
+                const days = parseInt(currentSelections.rush.type) || 7;
+                const rates = {7: 10, 3: 15, 1: 20};
+                const perSet = rates[days] || 10;
+                const layoutRush = currentSelections.layout.type === 'own-layout' ? 0 : 100;
+                rushFee = layoutRush + (perSet * numberOfSets);
+                rushSummary = `Rush fee: ₱${rushFee} (${days} days production)`;
             }
             
             // Calculate price per set (including flat add-ons except Map layout)
@@ -825,6 +1419,11 @@
                     return;
                 }
                 
+                // Update dynamic prices from pages input
+                if (addonId === 'solid-color-print' && addon.variant) {
+                    addon.price = calculateSolidColorPrice(addon.variant, addon.quantity || 1) / (addon.quantity || 1);
+                }
+                
                 if (addon.unit === 'flat') {
                     // Check if this flat add-on should be included in price per set
                     if (flatAddonsInPricePerSet.includes(addonId)) {
@@ -834,7 +1433,9 @@
                     // Note: flat add-ons NOT in the list are treated as one-time fees
                 } else {
                     // For per-page/per-piece add-ons, add their price to price per set
-                    addonPricePerSet += addon.price * addon.quantity;
+                    if (addonId !== 'envelope-print') {
+                        addonPricePerSet += addon.price * addon.quantity;
+                    }
                 }
             });
             
@@ -842,21 +1443,20 @@
             
             // Calculate sets total (price for all sets)
             let payableSets = numberOfSets;
-            let freeSets = 0;
-            
-            // Apply discount logic - for both direct-shipping and show all
-			if (currentSelections.discount && (currentSelections.paymentMethod === "direct-shipping" || currentSelections.paymentMethod === "none")) {
-				// Calculate free sets but don't give them for free, instead reduce payable sets
-				freeSets = calculateFreeSetsForDirectShipping(numberOfSets);
-				payableSets = numberOfSets - freeSets;
-			} else {
-				// Normal calculation
-				payableSets = numberOfSets;
-			}
-            const setsTotal = totalPerSet * payableSets;
-            
+            let freeSets = calculateFreeSetsForDirectShipping(numberOfSets);
+    
+            // Apply discount logic
+            if (currentSelections.discount && (currentSelections.paymentMethod === "direct-shipping" || currentSelections.paymentMethod === "none")) {
+                payableSets = numberOfSets - freeSets;
+            } else {
+                // Normal calculation
+                payableSets = numberOfSets;
+            }
+    
             // Calculate one-time fees (Map layout, layout fee, rush fee, and flat add-ons NOT in price per set)
             let oneTimeFeesTotal = 0;
+            const setsTotal = totalPerSet * payableSets;
+            let oneTimeFeesText = "";
             let oneTimeFeesHTML = "";
             
             Object.keys(currentSelections.addons).forEach(addonId => {
@@ -866,18 +1466,24 @@
                     // Map layout is always a one-time fee
                     oneTimeFeesTotal += addon.price;
                     oneTimeFeesHTML += `<div class="summary-line">Map layout: ₱${addon.price}</div>`;
+                } else if (addonId === 'e-invite') {
+                    // E-invite is a one-time fee: P100 × number of inserts
+                    const eInviteTotal = addon.price * currentSelections.inserts.value;
+                    oneTimeFeesTotal += eInviteTotal;
+                    oneTimeFeesHTML += `<div class="summary-line">E-invite (${currentSelections.inserts.value} ${currentSelections.inserts.value === 1 ? 'page' : 'pages'}): ₱${eInviteTotal}</div>`;
+                } else if (addonId === 'envelope-print') {
+                    const epTotal = addon.price * (addon.quantity || 1);
+                    oneTimeFeesTotal += epTotal;
+                    const displayName = addon.fullPage ? 'Full page envelope print' : 'Envelope print';
+                    oneTimeFeesHTML += `<div class="summary-line">${addon.quantity || 1} pcs ${displayName}: ₱${epTotal}</div>`;
                 } else if (addon.unit === 'flat' && !flatAddonsInPricePerSet.includes(addonId)) {
                     // Flat add-ons NOT in the price-per-set list are one-time fees
                     oneTimeFeesTotal += addon.price;
-                    oneTimeFeesHTML += `<div class="summary-line">${addon.name}: ₱${addon.price}</div>`;
+                    const displayName = addon.fullPage ? `Full page ${addon.name.toLowerCase()}` : (addon.variant ? `${addon.variant} ${addon.name}` : addon.name);
+                    oneTimeFeesHTML += `<div class="summary-line">${displayName}</div>`;
                 }
             });
 			
-			// Add additional pages text if applicable - THIS GOES BEFORE SETS TOTAL
-            if (additionalPagesText) {
-                oneTimeFeesHTML += `<div class="summary-line">${additionalPagesText}</div>`;
-            }
-            
             // Add layout fee to one-time fees if applicable - ALWAYS SHOW LAYOUT INFO
             if (layoutSummary) {
                 if (layoutSummary.startsWith("Layout fee:")) {
@@ -889,6 +1495,11 @@
                 }
             }
             
+            // Show free sets after layout (when not discounted)
+            if (!currentSelections.discount && freeSets > 0) {
+                oneTimeFeesHTML += `<div class="summary-line">FREE ${freeSets} set${freeSets > 1 ? 's' : ''}</div>`;
+            }
+            
             // Add rush fee to one-time fees if applicable
             if (rushSummary) {
                 oneTimeFeesTotal += rushFee;
@@ -896,7 +1507,11 @@
             }
             
             
-            const finalTotal = setsTotal + oneTimeFeesTotal;
+            const souvenirTotal = recalcSouvenirs();
+            const passportData = getPassportTotal();
+            const passportTotal = passportData.grandTotal || 0;
+            const inviContribution = passportOnlyMode ? 0 : setsTotal;
+            const finalTotal = inviContribution + oneTimeFeesTotal + souvenirTotal + passportTotal;
             
             // Update display
             document.getElementById('price-per-set').textContent = `₱${totalPerSet} each`;
@@ -927,14 +1542,49 @@
             
             document.getElementById('final-total').innerHTML = `Total: ₱${finalTotal}`;
             
+            // Update souvenir breakdown in summary
+            const souvenirBreakdown = getSouvenirBreakdown();
+            const souvenirEl = document.getElementById('souvenir-breakdown');
+            if (souvenirBreakdown) {
+                souvenirEl.innerHTML = souvenirBreakdown;
+                souvenirEl.style.display = 'block';
+            } else {
+                souvenirEl.innerHTML = '';
+                souvenirEl.style.display = 'none';
+            }
+            
+            // Update passport breakdown
+            const passportBreakdown = getPassportBreakdown();
+            const passportEl = document.getElementById('passport-breakdown');
+            if (passportBreakdown) {
+                passportEl.innerHTML = passportBreakdown;
+                passportEl.style.display = 'block';
+            } else {
+                passportEl.innerHTML = '';
+                passportEl.style.display = 'none';
+            }
+            
             // Update payment methods section
             updatePaymentMethods(finalTotal, setsTotal, oneTimeFeesTotal, payableSets, freeSets);
+            
+            // Update mobile floating price bar
+            document.getElementById('mobile-bar-price').textContent = `₱${totalPerSet} each`;
+            document.getElementById('mobile-bar-total').textContent = `Total: ₱${finalTotal}`;
+            document.getElementById('mobile-bar-sets').textContent = `${numberOfSets} sets`;
+            
+            // Toggle invitation breakdown visibility for passport-only mode
+            const inviEls = document.querySelectorAll('#event-type-title, #event-date-display, #payment-method-display, #price-per-set, #summary-size-line, #summary-envelope-line, #summary-inserts-line, #summary-paper-line, #summary-seal-line, #addons-summary, #one-time-fees, #sets-total');
+            inviEls.forEach(el => el.style.display = passportOnlyMode ? 'none' : '');
+            document.getElementById('addons-summary').style.display = passportOnlyMode ? 'none' : '';
         }
         
         function updatePaymentMethods(finalTotal, setsTotal, oneTimeFeesTotal, payableSets, freeSets) {
             const paymentMethodsSection = document.getElementById('payment-methods-section');
             const locationName = currentSelections.location ? locationNames[currentSelections.location] : '';
             const shippingFee = calculateShippingFee(finalTotal);
+            const courierNames = { spx: 'SPX Express', jnt: 'J&T Express', lbc: 'LBC' };
+            const courierLabel = courierNames[courier] || 'SPX';
+            const shippingLabel = shippingFee > 0 ? `+ ₱${shippingFee} shipping fee (${courierLabel})` : 'FREE Shipping';
             
             // Calculate free sets for display (for non-discount case)
             const displayFreeSets = currentSelections.discount ? 0 : calculateFreeSetsForDirectShipping(numberOfSets);
@@ -944,64 +1594,15 @@
             // Calculate downpayment (50% of final total including shipping)
             const downpayment = roundToWholeNumber(finalTotal / 2);
             const balance = finalTotal - downpayment;
-            const shopeeCOD = roundToWholeNumber(balance * 1.15); // 15% additional for COD
             
-            // Show payment methods based on selection
-            if (currentSelections.paymentMethod === "none") {
-                // Show both Direct Shipping and Shopee Checkout
-                paymentMethodsHTML += `
-                    <div class="payment-method-option">
-                        <div class="payment-method-title">Direct shipping</div>
-                        <div class="payment-method-details">
-                            Downpayment: ₱${downpayment}<br>
-                            Balance before ship out: ₱${balance}<br>
-                            ${displayFreeSets > 0 ? `FREE ${displayFreeSets} set${displayFreeSets > 1 ? 's' : ''}<br>` : ''}
-                            ${shippingFee > 0 ? `+ ₱${shippingFee} Shipping fee` : 'FREE Shipping'}
-                        </div>
-                    </div>
-                    <div class="payment-method-option">
-                        <div class="payment-method-title">Shopee Checkout (15% add)</div>
-                        <div class="payment-method-details">
-                            Downpayment: ₱${downpayment}<br>
-                            COD: ₱${shopeeCOD} ${shippingFee > 0 ? `+ shipping fee` : ''}
-                        </div>
-                    </div>
-                `;
-            } else if (currentSelections.paymentMethod === "direct-shipping") {
-                // Show only Direct Shipping
-                paymentMethodsHTML += `
-                    <div class="payment-method-option">
-                        <div class="payment-method-title">Direct shipping</div>
-                        <div class="payment-method-details">
-                            Downpayment: ₱${downpayment}<br>
-                            Balance before ship out: ₱${balance}<br>
-                            ${displayFreeSets > 0 ? `FREE ${displayFreeSets} set${displayFreeSets > 1 ? 's' : ''}<br>` : ''}
-                            ${shippingFee > 0 ? `+ ₱${shippingFee} Shipping fee` : 'FREE Shipping'}
-                        </div>
-                    </div>
-                `;
-            } else if (currentSelections.paymentMethod === "shopee-checkout") {
-                // Show only Shopee Checkout (COD)
-                paymentMethodsHTML += `
-                    <div class="payment-method-option">
-                        <div class="payment-method-title">Shopee Checkout (15% add)</div>
-                        <div class="payment-method-details">
-                            Downpayment: ₱${downpayment}<br>
-                            COD: ₱${shopeeCOD} ${shippingFee > 0 ? `+ shipping fee` : ''}
-                        </div>
-                    </div>
-                `;
-            } else if (currentSelections.paymentMethod === "shopee-checkout-full") {
-                // Show only Shopee Checkout Full Payment
-                paymentMethodsHTML += `
-                    <div class="payment-method-option">
-                        <div class="payment-method-title">Shopee Checkout Full Payment</div>
-                        <div class="payment-method-details">
-                            Full Payment: ₱${finalTotal} ${shippingFee > 0 ? `+ shipping fee` : ''}
-                        </div>
-                    </div>
-                `;
-            }
+            // Direct shipping details only
+            paymentMethodsHTML += `
+                <div class="payment-method-details">
+                    Downpayment: ₱${downpayment}<br>
+                    Balance before ship out: ₱${balance}<br>
+                    ${shippingLabel}
+                </div>
+            `;
             
             // Add discount note if applicable
             if (currentSelections.discount && freeSets > 0) {
@@ -1022,7 +1623,12 @@
             const saveData = {
                 currentSelections: currentSelections,
                 numberOfSets: numberOfSets,
-                eventDate: eventDate
+                eventDate: eventDate,
+                currentSouvenirs: currentSouvenirs,
+                passportSelection: passportSelection,
+                passportOnlyMode: passportOnlyMode,
+                passportSets: passportSets,
+                courier: courier
             };
             localStorage.setItem('invitationCalculatorData', JSON.stringify(saveData));
         }
@@ -1032,6 +1638,21 @@
             if (savedData) {
                 try {
                     const data = JSON.parse(savedData);
+                    
+                    // Fix duplicate: migrate old addon IDs to new consolidated ones
+                    if (data.currentSelections && data.currentSelections.addons) {
+                        const oldIds = ['gold-foil', 'silver-foil', 'rosegold-foil', 'gold-foil-full-page', 'silver-foil-full-page', 'rosegold-foil-full-page', 'glossy-phototop', 'matte-phototop', 'leather-phototop', 'glitter-phototop', 'website-RSVP'];
+                        oldIds.forEach(id => delete data.currentSelections.addons[id]);
+                    }
+                    
+                    // Restore souvenirs
+                    if (data.currentSouvenirs) currentSouvenirs = data.currentSouvenirs;
+                    
+                    // Restore passport
+                    if (data.passportSelection) passportSelection = data.passportSelection;
+                    if (data.passportOnlyMode !== undefined) { passportOnlyMode = data.passportOnlyMode; document.getElementById('passport-only-mode').checked = passportOnlyMode; }
+                    if (data.passportSets) passportSets = data.passportSets;
+                    if (data.courier) { courier = data.courier; document.getElementById('courier-select').value = courier; }
                     
                     // Restore basic data
                     if (data.numberOfSets) numberOfSets = data.numberOfSets;
@@ -1051,36 +1672,15 @@
         }
         
         function updateUIFromSavedData() {
-            // Update event type
-            const eventTypeCards = document.querySelectorAll('#event-type-options .option-card');
-            eventTypeCards.forEach(card => {
-                if (card.getAttribute('data-value') === currentSelections.eventType.value) {
-                    card.classList.add('selected');
-                } else {
-                    card.classList.remove('selected');
-                }
-            });
+            // Update event type select
+            document.getElementById('event-type-select').value = currentSelections.eventType.value;
             updateEventTypeTitle();
             
-            // Update size
-            const sizeCards = document.querySelectorAll('#size-options .option-card');
-            sizeCards.forEach(card => {
-                if (card.getAttribute('data-value') === currentSelections.size.value) {
-                    card.classList.add('selected');
-                } else {
-                    card.classList.remove('selected');
-                }
-            });
+            // Update size select
+            document.getElementById('size-select').value = currentSelections.size.value;
             
-            // Update envelope
-            const envelopeCards = document.querySelectorAll('#envelope-options .option-card');
-            envelopeCards.forEach(card => {
-                if (card.getAttribute('data-value') === currentSelections.envelope.value) {
-                    card.classList.add('selected');
-                } else {
-                    card.classList.remove('selected');
-                }
-            });
+            // Update envelope select
+            document.getElementById('envelope-select').value = currentSelections.envelope.value;
 			
 			// Update envelope customization UI
 			if (currentSelections.envelope) {
@@ -1090,28 +1690,13 @@
 			}
             
             // Update inserts slider
-            document.getElementById('inserts-slider').value = currentSelections.inserts.value;
-            document.getElementById('inserts-value').textContent = `${currentSelections.inserts.value} insert${currentSelections.inserts.value !== 1 ? 's' : ''}`;
+            document.getElementById('inserts-input').value = currentSelections.inserts.value;
             
-            // Update paper
-            const paperCards = document.querySelectorAll('#paper-options .option-card');
-            paperCards.forEach(card => {
-                if (card.getAttribute('data-value') === currentSelections.paper.value) {
-                    card.classList.add('selected');
-                } else {
-                    card.classList.remove('selected');
-                }
-            });
+            // Update paper select
+            document.getElementById('paper-select').value = currentSelections.paper.value;
             
-            // Update seal
-            const sealCards = document.querySelectorAll('#seal-options .option-card');
-            sealCards.forEach(card => {
-                if (card.getAttribute('data-value') === currentSelections.seal.value) {
-                    card.classList.add('selected');
-                } else {
-                    card.classList.remove('selected');
-                }
-            });
+            // Update seal select
+            document.getElementById('seal-select').value = currentSelections.seal.value;
             
             // Update layout checkbox and dropdown
             document.getElementById('layout-checkbox').checked = currentSelections.layout.required;
@@ -1133,16 +1718,6 @@
             
             // Update discount checkbox
             document.getElementById('discount-checkbox').checked = currentSelections.discount;
-            
-            // Update payment method
-            const paymentMethodCards = document.querySelectorAll('#payment-method-options .option-card');
-            paymentMethodCards.forEach(card => {
-                if (card.getAttribute('data-value') === currentSelections.paymentMethod) {
-                    card.classList.add('selected');
-                } else {
-                    card.classList.remove('selected');
-                }
-            });
             
             // Update location
             document.getElementById('location-select').value = currentSelections.location;
@@ -1166,6 +1741,17 @@
                                 quantityInput.disabled = false;
                                 quantityInput.value = currentSelections.addons[addonId].quantity;
                             }
+                            const dropdown = document.getElementById(`variant-${addonId}`);
+                            if (dropdown && currentSelections.addons[addonId].variant) {
+                                dropdown.style.display = 'block';
+                                dropdown.disabled = false;
+                                dropdown.value = currentSelections.addons[addonId].variant;
+                                // If it's a price dropdown, ensure price is correct
+                                if (currentSelections.addons[addonId].isPriceDropdown) {
+                                    const opt = dropdown.options[dropdown.selectedIndex];
+                                    if (opt) currentSelections.addons[addonId].price = parseInt(opt.getAttribute('data-price'));
+                                }
+                            }
                         }
                     });
                 }
@@ -1173,45 +1759,29 @@
         }
         
         function resetSelections() {
-            const eventTypeCards = document.querySelectorAll('#event-type-options .option-card');
-            eventTypeCards.forEach(card => card.classList.remove('selected'));
-            eventTypeCards[0].classList.add('selected');
+            if (!confirm("Reset all selections to default values?")) return;
+            document.getElementById('event-type-select').value = "wedding";
             currentSelections.eventType = { value: "wedding", price: 0, name: "Wedding" };
             updateEventTypeTitle();
             
-            const sizeCards = document.querySelectorAll('#size-options .option-card');
-            sizeCards.forEach(card => card.classList.remove('selected'));
-            sizeCards[0].classList.add('selected');
+            document.getElementById('size-select').value = "4r";
             currentSelections.size = { value: "4r", price: 0, name: "4R" };
             
-            const envelopeCards = document.querySelectorAll('#envelope-options .option-card');
-            envelopeCards.forEach(card => card.classList.remove('selected'));
-            envelopeCards[1].classList.add('selected');
+            document.getElementById('envelope-select').value = "plain-white";
             currentSelections.envelope = { value: "plain-white", price: 0, name: "Plain white", custom: false, color: "", texture: "" };
             
-            document.getElementById('inserts-slider').value = 0;
-            document.getElementById('inserts-value').textContent = '0 inserts';
-            currentSelections.inserts = { value: 0, price: 0 };
+            document.getElementById('inserts-input').value = 2;
+            currentSelections.inserts = { value: 2, price: 10 };
             
-            const paperCards = document.querySelectorAll('#paper-options .option-card');
-            paperCards.forEach(card => card.classList.remove('selected'));
-            paperCards[0].classList.add('selected');
+            document.getElementById('paper-select').value = "matte";
             currentSelections.paper = { value: "matte", price: 0, name: "Matte" };
             
-            const sealCards = document.querySelectorAll('#seal-options .option-card');
-            sealCards.forEach(card => card.classList.remove('selected'));
-            sealCards[0].classList.add('selected');
+            document.getElementById('seal-select').value = "no-seal";
             currentSelections.seal = { value: "no-seal", price: 0, name: "No seal" };
             
             // Reset add-ons
-            document.querySelectorAll('.addon-checkbox').forEach(checkbox => {
-                checkbox.checked = false;
-            });
-            document.querySelectorAll('.addon-input').forEach(input => {
-                input.value = 1;
-                input.disabled = true;
-            });
             currentSelections.addons = {};
+            renderSelectedAddons();
             
             document.getElementById('envelope-checkbox').checked = false;
 			document.getElementById('color-select').value = "";
@@ -1219,27 +1789,23 @@
 			document.getElementById('layout-checkbox').checked = false;
             document.getElementById('layout-type').value = "no-layout";
             document.getElementById('rush-checkbox').checked = false;
-            document.getElementById('rush-type').value = "no-layout";
+            document.getElementById('rush-type').value = "7";
             document.getElementById('discount-checkbox').checked = false;
             currentSelections.layout = { required: false, type: "no-layout", pages: 1 };
-            currentSelections.rush = { required: false, type: "no-layout" };
+            currentSelections.rush = { required: false, type: "7" };
             currentSelections.discount = false;
             
             // Reset layout and rush dropdowns
 			document.getElementById('layout-type').value = "no-layout";
-			document.getElementById('rush-type').value = "no-layout";
+			document.getElementById('rush-type').value = "7";
 			currentSelections.layout = { required: false, type: "no-layout", pages: 1 };
-			currentSelections.rush = { required: false, type: "no-layout" };
+			currentSelections.rush = { required: false, type: "7" };
 			
-			// Reset payment method
-            const paymentMethodCards = document.querySelectorAll('#payment-method-options .option-card');
-            paymentMethodCards.forEach(card => card.classList.remove('selected'));
-            paymentMethodCards[0].classList.add('selected');
-            currentSelections.paymentMethod = "direct-shipping";
-            
-            // Reset location
+			// Reset location
             document.getElementById('location-select').value = "";
             currentSelections.location = "";
+            document.getElementById('courier-select').value = "spx";
+            courier = "spx";
             
             document.getElementById('sets-input').value = 20;
             numberOfSets = 20;
@@ -1255,8 +1821,15 @@
             // Clear localStorage
             localStorage.removeItem('invitationCalculatorData');
             
+            // Clear souvenirs
+            currentSouvenirs = {};
+            renderSouvenirs();
+            
+            // Reset passport
+            passportSelection = { type: 'passport', basePrice: 80, name: 'Passport', paper: 'glossy', paperPrice: 0, paperName: 'Glossy', leaves: 2, leafExtra: 0, color: '', ribbon: '' };
+            if (typeof restorePassportUI === 'function') restorePassportUI();
+            
             updateSummary();
-            alert("All selections have been reset to default values.");
         }
         
         function copyPriceSummary() {
@@ -1272,6 +1845,7 @@
     
     // Get add-ons summary (included in price per set)
     let addonsInPricePerSet = '';
+    const getDisplayName = (addon) => addon.variant ? `${addon.variant} ${addon.name}` : addon.name;
     Object.keys(currentSelections.addons).forEach(addonId => {
         const addon = currentSelections.addons[addonId];
         
@@ -1280,12 +1854,17 @@
             return;
         }
         
+        // Update dynamic prices from inserts
+        if (addonId === 'solid-color-print' && addon.variant) {
+            addon.price = calculateSolidColorPrice(addon.variant, addon.quantity || 1) / (addon.quantity || 1);
+        }
+        
         if (addon.unit === 'flat') {
             // Check if this flat add-on should be included in price per set
             if (flatAddonsInPricePerSet.includes(addonId)) {
                 // These flat add-ons are included in price per set
                 if (addonsInPricePerSet) addonsInPricePerSet += "\n";
-                addonsInPricePerSet += `${addon.name}`;
+                addonsInPricePerSet += `${getDisplayName(addon)}`;
             }
         } else {
             // For per-page/per-piece add-ons, add their price to price per set
@@ -1293,7 +1872,7 @@
             const unitText = addon.unit === 'page' ? (addon.quantity === 1 ? 'page' : 'pages') : 
                             (addon.quantity === 1 ? 'pc' : 'pcs');
             if (addonsInPricePerSet) addonsInPricePerSet += "\n";
-            addonsInPricePerSet += `${addon.quantity} ${unitText} ${addon.name}`;
+            addonsInPricePerSet += `${addon.quantity} ${unitText} ${getDisplayName(addon)}`;
         }
     });
     
@@ -1330,28 +1909,21 @@ function copyQuotation() {
     
     // Calculate add-ons total and summary
     let addonsSummary = "";
+    const getDisplayName = (addon) => addon.variant ? `${addon.variant} ${addon.name}` : addon.name;
     
     Object.keys(currentSelections.addons).forEach(addonId => {
         const addon = currentSelections.addons[addonId];
         
         if (addon.unit === 'flat') {
             // Show all flat add-ons in the main summary
-            addonsSummary += `${addon.name}\n`;
+            addonsSummary += `${getDisplayName(addon)}\n`;
         } else if (addon.unit === 'page' || addon.unit === 'piece') {
             // Format: "X page(s)/pc(s) Addon Name" with correct grammar
             const unitText = addon.unit === 'page' ? (addon.quantity === 1 ? 'page' : 'pages') : 
                             (addon.quantity === 1 ? 'pc' : 'pcs');
-            addonsSummary += `${addon.quantity} ${unitText} ${addon.name}\n`;
+            addonsSummary += `${addon.quantity} ${unitText} ${getDisplayName(addon)}\n`;
         }
     });
-    
-    // Calculate additional pages for inserts more than 4
-    let additionalPagesText = "";
-    const insertsCount = currentSelections.inserts.value;
-    if (insertsCount > 4) {
-        const additionalPages = insertsCount - 4;
-        additionalPagesText = `${additionalPages} page${additionalPages > 1 ? 's' : ''} add`;
-    }
     
     // Calculate layout fee based on number of inserts (pages)
     let layoutFee = 0;
@@ -1391,13 +1963,12 @@ function copyQuotation() {
     let rushFee = 0;
     let rushSummary = "";
     if (currentSelections.rush.required) {
-        if (currentSelections.rush.type === "own-layout") {
-            rushFee = 10 * numberOfSets;
-            rushSummary = `Rush fee: ₱${rushFee}`;
-        } else if (currentSelections.rush.type === "no-layout") {
-            rushFee = 100 + (10 * numberOfSets);
-            rushSummary = `Rush fee: ₱${rushFee}`;
-        }
+        const days = parseInt(currentSelections.rush.type) || 7;
+        const rates = {7: 10, 3: 15, 1: 20};
+        const perSet = rates[days] || 10;
+        const layoutRush = currentSelections.layout.type === 'own-layout' ? 0 : 100;
+        rushFee = layoutRush + (perSet * numberOfSets);
+        rushSummary = `Rush fee: ₱${rushFee} (${days} days production)`;
     }
     
     // Calculate price per set (including flat add-ons except Map layout)
@@ -1408,6 +1979,11 @@ function copyQuotation() {
         if (addonId === 'map-layout') {
             // Map layout is NOT included in price per set (it's a one-time fee)
             return;
+        }
+        
+        // Update dynamic prices from inserts
+        if (addonId === 'solid-color-print' && addon.variant) {
+            addon.price = calculateSolidColorPrice(addon.variant, addon.quantity || 1) / (addon.quantity || 1);
         }
         
         if (addon.unit === 'flat') {
@@ -1426,7 +2002,7 @@ function copyQuotation() {
     
     // Calculate sets total (price for all sets)
     let payableSets = numberOfSets;
-    let freeSets = 0;
+    let freeSets = calculateFreeSetsForDirectShipping(numberOfSets);
     
     // Apply discount logic
     if (currentSelections.paymentMethod === "direct-shipping" || currentSelections.paymentMethod === "none") {
@@ -1454,10 +2030,16 @@ if (currentSelections.discount && (currentSelections.paymentMethod === "direct-s
             // Map layout is always a one-time fee
             oneTimeFeesTotal += addon.price;
             oneTimeFeesText += `Map layout: ₱${addon.price}\n`;
+        } else if (addonId === 'e-invite') {
+            // E-invite: P100 × number of inserts
+            const eInviteTotal = addon.price * currentSelections.inserts.value;
+            oneTimeFeesTotal += eInviteTotal;
+            oneTimeFeesText += `E-invite (${currentSelections.inserts.value} ${currentSelections.inserts.value === 1 ? 'page' : 'pages'}): ₱${eInviteTotal}\n`;
         } else if (addon.unit === 'flat' && !flatAddonsInPricePerSet.includes(addonId)) {
             // Flat add-ons NOT in the price-per-set list are one-time fees
+            const displayName = addon.fullPage ? `Full page ${addon.name.toLowerCase()}` : (addon.variant ? `${addon.variant} ${addon.name}` : addon.name);
             oneTimeFeesTotal += addon.price;
-            oneTimeFeesText += `${addon.name}: ₱${addon.price}\n`;
+            oneTimeFeesText += `${displayName}\n`;
         }
     });
     
@@ -1480,14 +2062,18 @@ if (currentSelections.discount && (currentSelections.paymentMethod === "direct-s
     
     
     
-    const finalTotal = setsTotal + oneTimeFeesTotal;
+    const souvenirTotal = recalcSouvenirs();
+    const passportData = getPassportTotal();
+    const passportTotal = passportData.grandTotal || 0;
+    const inviContribution = passportOnlyMode ? 0 : setsTotal;
+    const finalTotal = inviContribution + oneTimeFeesTotal + souvenirTotal + passportTotal;
     
     // Calculate payment details - NEW LOGIC: For direct shipping, subtract free sets from total
     const shippingFee = calculateShippingFee(finalTotal);
+    const courierLabel = { spx: 'SPX Express', jnt: 'J&T Express', lbc: 'LBC' }[courier] || 'SPX';
     const displayFreeSets = currentSelections.discount ? 0 : calculateFreeSetsForDirectShipping(numberOfSets);
     const downpayment = roundToWholeNumber(finalTotal / 2);
     const balance = finalTotal - downpayment;
-    const shopeeCOD = roundToWholeNumber(balance * 1.15); // 15% additional for COD
     
     const eventType = currentSelections.eventType.name;
     const eventTitle = eventType === "Special event" ? "Special event invitation" : `${eventType} invitation`;
@@ -1513,7 +2099,11 @@ if (currentSelections.discount && (currentSelections.paymentMethod === "direct-s
     }
     
     // Build quotation text with proper formatting
-    let quotationText = `${eventTitle}`;
+    let quotationText = '';
+    
+    // Invitation section — skip if passport-only mode
+    if (!passportOnlyMode) {
+        quotationText = `${eventTitle}`;
     
     if (formattedEventDate) {
         quotationText += `\nEvent Date: ${formattedEventDate}`;
@@ -1530,11 +2120,6 @@ if (currentSelections.discount && (currentSelections.paymentMethod === "direct-s
         quotationText += `\n${addonsSummary}`;
     }
 	
-	// Add additional pages text if applicable
-    if (additionalPagesText) {
-        quotationText += `${additionalPagesText}`;
-    }
-    
 	// Handle sets total
 	let setsTotalText = '';
 	if (currentSelections.discount && freeSets > 0 && (currentSelections.paymentMethod === "direct-shipping" || currentSelections.paymentMethod === "none")) {
@@ -1549,60 +2134,32 @@ if (currentSelections.discount && (currentSelections.paymentMethod === "direct-s
         // Add a single newline before the layout/rush info
         quotationText += `\n${oneTimeFeesText.trim()}`;
     }
+    } // end passportOnlyMode check
+    
+    // Add souvenir items
+    const souvenirText = getSouvenirCopyText();
+    if (souvenirText) {
+        quotationText += `\n\n${souvenirText.trim()}`;
+    }
+    
+    // Add passport
+    const passportText = getPassportCopyText();
+    if (passportText) {
+        quotationText += `\n\n${passportText}`;
+    }
     
     quotationText += `\n\nTotal: ₱${finalTotal}`;
     
-    // Add payment methods based on selection
-    quotationText += `\n\nPayment method`;
-    
-    if (currentSelections.paymentMethod === "none") {
-        // Show both Direct Shipping and Shopee Checkout
-        quotationText += `\n\nDirect shipping\n\n`;
-        quotationText += `Downpayment: ₱${downpayment}\n`;
-        quotationText += `Balance before ship out: ₱${balance}`;
-        if (displayFreeSets > 0) {
-            quotationText += `\nFREE ${displayFreeSets} set${displayFreeSets > 1 ? 's' : ''}`;
-        }
-        if (shippingFee > 0) {
-            quotationText += `\n+ ₱${shippingFee} Shipping fee`;
-        } else {
-            quotationText += `\nFREE Shipping`;
-        }
-        
-        quotationText += `\n\nShopee Checkout (15% add)\n\n`;
-        quotationText += `Downpayment: ₱${downpayment}\n`;
-        quotationText += `COD: ₱${shopeeCOD}`;
-        if (shippingFee > 0) {
-            quotationText += ` + shipping fee`;
-        }
-    } else if (currentSelections.paymentMethod === "direct-shipping") {
-        // Show only Direct Shipping
-        quotationText += `\n\nDirect shipping\n\n`;
-        quotationText += `Downpayment: ₱${downpayment}\n`;
-        quotationText += `Balance before ship out: ₱${balance}`;
-        if (displayFreeSets > 0) {
-            quotationText += `\nFREE ${displayFreeSets} set${displayFreeSets > 1 ? 's' : ''}`;
-        }
-        if (shippingFee > 0) {
-            quotationText += `\n+ ₱${shippingFee} Shipping fee`;
-        } else {
-            quotationText += `\nFREE Shipping`;
-        }
-    } else if (currentSelections.paymentMethod === "shopee-checkout") {
-        // Show only Shopee Checkout (COD)
-        quotationText += `\n\nShopee Checkout (15% add)\n\n`;
-        quotationText += `Downpayment: ₱${downpayment}\n`;
-        quotationText += `COD: ₱${shopeeCOD}`;
-        if (shippingFee > 0) {
-            quotationText += ` + shipping fee`;
-        }
-    } else if (currentSelections.paymentMethod === "shopee-checkout-full") {
-        // Show only Shopee Checkout Full Payment
-        quotationText += `\n\nShopee Checkout Full Payment\n\n`;
-        quotationText += `Full Payment: ₱${finalTotal}`;
-        if (shippingFee > 0) {
-            quotationText += ` + shipping fee`;
-        }
+    // Payment details (no header)
+    quotationText += `\n\nDownpayment: ₱${downpayment}`;
+    quotationText += `\nBalance before ship out: ₱${balance}`;
+    if (displayFreeSets > 0) {
+        quotationText += `\nFREE ${displayFreeSets} set${displayFreeSets > 1 ? 's' : ''}`;
+    }
+    if (shippingFee > 0) {
+        quotationText += `\n+ ₱${shippingFee} shipping fee (${courierLabel})`;
+    } else {
+        quotationText += `\nFREE Shipping`;
     }
     
     // Add discount note if applicable
@@ -1629,45 +2186,28 @@ if (currentSelections.discount && (currentSelections.paymentMethod === "direct-s
 }
         
         function resetSelectionsOnly() {
-    const eventTypeCards = document.querySelectorAll('#event-type-options .option-card');
-    eventTypeCards.forEach(card => card.classList.remove('selected'));
-    eventTypeCards[0].classList.add('selected');
+    document.getElementById('event-type-select').value = "wedding";
     currentSelections.eventType = { value: "wedding", price: 0, name: "Wedding" };
     updateEventTypeTitle();
     
-    const sizeCards = document.querySelectorAll('#size-options .option-card');
-    sizeCards.forEach(card => card.classList.remove('selected'));
-    sizeCards[0].classList.add('selected');
+    document.getElementById('size-select').value = "4r";
     currentSelections.size = { value: "4r", price: 0, name: "4R" };
     
-    const envelopeCards = document.querySelectorAll('#envelope-options .option-card');
-    envelopeCards.forEach(card => card.classList.remove('selected'));
-    envelopeCards[1].classList.add('selected');
+    document.getElementById('envelope-select').value = "plain-white";
     currentSelections.envelope = { value: "plain-white", price: 0, name: "Plain white", custom: false, color: "", texture: "" };
     
-    document.getElementById('inserts-slider').value = 0;
-    document.getElementById('inserts-value').textContent = '0 inserts';
-    currentSelections.inserts = { value: 0, price: 0 };
+    document.getElementById('inserts-input').value = 2;
+    currentSelections.inserts = { value: 2, price: 10 };
     
-    const paperCards = document.querySelectorAll('#paper-options .option-card');
-    paperCards.forEach(card => card.classList.remove('selected'));
-    paperCards[0].classList.add('selected');
+    document.getElementById('paper-select').value = "matte";
     currentSelections.paper = { value: "matte", price: 0, name: "Matte" };
-    
-    const sealCards = document.querySelectorAll('#seal-options .option-card');
-    sealCards.forEach(card => card.classList.remove('selected'));
-    sealCards[0].classList.add('selected');
+            
+    document.getElementById('seal-select').value = "no-seal";
     currentSelections.seal = { value: "no-seal", price: 0, name: "No seal" };
     
     // Reset add-ons
-    document.querySelectorAll('.addon-checkbox').forEach(checkbox => {
-        checkbox.checked = false;
-    });
-    document.querySelectorAll('.addon-input').forEach(input => {
-        input.value = 1;
-        input.disabled = true;
-    });
     currentSelections.addons = {};
+    renderSelectedAddons();
     
     document.getElementById('envelope-checkbox').checked = false;
     document.getElementById('color-select').value = "";
@@ -1675,21 +2215,17 @@ if (currentSelections.discount && (currentSelections.paymentMethod === "direct-s
     document.getElementById('layout-checkbox').checked = false;
     document.getElementById('layout-type').value = "no-layout";
     document.getElementById('rush-checkbox').checked = false;
-    document.getElementById('rush-type').value = "no-layout";
+    document.getElementById('rush-type').value = "7";
     document.getElementById('discount-checkbox').checked = false;
     currentSelections.layout = { required: false, type: "no-layout", pages: 1 };
-    currentSelections.rush = { required: false, type: "no-layout" };
+    currentSelections.rush = { required: false, type: "7" };
     currentSelections.discount = false;
-    
-    // Reset payment method
-    const paymentMethodCards = document.querySelectorAll('#payment-method-options .option-card');
-    paymentMethodCards.forEach(card => card.classList.remove('selected'));
-    paymentMethodCards[0].classList.add('selected');
-    currentSelections.paymentMethod = "direct-shipping";
     
     // Reset location
     document.getElementById('location-select').value = "";
     currentSelections.location = "";
+    document.getElementById('courier-select').value = "spx";
+    courier = "spx";
     
     document.getElementById('sets-input').value = 20;
     numberOfSets = 20;
@@ -1699,13 +2235,101 @@ if (currentSelections.discount && (currentSelections.paymentMethod === "direct-s
     eventDate = "";
     updateEventDateDisplay();
     
+    currentSouvenirs = {};
+    renderSouvenirs();
+    
+    passportSelection = { type: 'passport', basePrice: 80, name: 'Passport', paper: 'glossy', paperPrice: 0, paperName: 'Glossy', leaves: 2, leafExtra: 0, color: '', ribbon: '' };
+    if (typeof restorePassportUI === 'function') restorePassportUI();
+    
     updateSummary();
 }
 		
+        function parseOrderForm(text) {
+            resetSelectionsOnly();
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+            const get = (key) => {
+                const line = lines.find(l => l.toLowerCase().startsWith(key.toLowerCase()));
+                return line ? line.split(':').slice(1).join(':').trim() : '';
+            };
+            
+            // Event Type
+            const eventType = get('Event Type');
+            if (eventType) document.getElementById('event-type-select').value = eventType.toLowerCase();
+            
+            // Event Date
+            const eventDate = get('Event Date');
+            if (eventDate) {
+                // Parse "August 30" format
+                const months = { january:'01', february:'02', march:'03', april:'04', may:'05', june:'06', july:'07', august:'08', september:'09', october:'10', november:'11', december:'12' };
+                const parts = eventDate.split(' ');
+                if (parts.length === 2) {
+                    const m = months[parts[0].toLowerCase()];
+                    const d = parseInt(parts[1]) || 1;
+                    if (m) {
+                        const year = new Date().getFullYear();
+                        document.getElementById('event-date-input').value = `${year}-${m}-${String(d).padStart(2,'0')}`;
+                    }
+                }
+            }
+            
+            // Own layout
+            const ownLayout = get('Do you have your own layout');
+            if (ownLayout && ownLayout.toLowerCase().includes('yes')) {
+                document.getElementById('layout-checkbox').checked = true;
+                document.getElementById('layout-type').value = 'own-layout';
+                currentSelections.layout = { required: true, type: 'own-layout', pages: 1 };
+            }
+            
+            // Rush order
+            const rushOrder = get('Is this for a rush order');
+            const dateNeeded = get('Date Needed');
+            if ((rushOrder && rushOrder.toLowerCase().includes('yes')) || dateNeeded) {
+                document.getElementById('rush-checkbox').checked = true;
+                currentSelections.rush = { required: true, type: '7' };
+            }
+            
+            // Order Quantity
+            const qty = get('Order Quantity');
+            if (qty) {
+                const num = parseInt(qty.replace(/[^0-9]/g, '')) || 20;
+                document.getElementById('sets-input').value = num;
+                currentSelections.numberOfSets = num;
+            }
+            
+            // Province → location
+            const province = get('Province');
+            if (province) {
+                const p = province.toLowerCase();
+                let loc = '';
+                if (p.includes('negros') || p.includes('cebu') || p.includes('visayas')) loc = 'visayas';
+                else if (p.includes('metro manila') || p.includes('ncr')) loc = 'ncr';
+                else if (p.includes('mindanao') || p.includes('davao')) loc = 'mindanao';
+                else if (p.includes('luzon')) {
+                    if (p.includes('north')) loc = 'north-luzon';
+                    else if (p.includes('south')) loc = 'south-luzon';
+                    else loc = 'central-luzon';
+                }
+                if (loc) {
+                    document.getElementById('location-select').value = loc;
+                    currentSelections.location = loc;
+                }
+            }
+            
+            updateSummary();
+            saveToLocalStorage();
+            alert('Order form parsed! Check the settings and adjust as needed.');
+        }
+        
 		function importQuotation() {
     const importText = document.getElementById('import-textarea').value.trim();
     if (!importText) {
         alert('Please paste a quotation summary to import.');
+        return;
+    }
+    
+    // Detect order form format
+    if (importText.includes('Inquiry Form') || importText.includes('Event Type:')) {
+        parseOrderForm(importText);
         return;
     }
     
@@ -1718,31 +2342,21 @@ if (currentSelections.discount && (currentSelections.paymentMethod === "direct-s
         
         // Parse event type
         for (const line of lines) {
-            if (line.toLowerCase().includes('wedding')) {
-                selectOptionCard('event-type-options', 'wedding');
-                break;
-            } else if (line.toLowerCase().includes('debut')) {
-                selectOptionCard('event-type-options', 'debut');
-                break;
-            } else if (line.toLowerCase().includes('birthday')) {
-                selectOptionCard('event-type-options', 'birthday');
-                break;
-            } else if (line.toLowerCase().includes('baptism')) {
-                selectOptionCard('event-type-options', 'baptism');
-                break;
-            } else if (line.toLowerCase().includes('special event')) {
-                selectOptionCard('event-type-options', 'special-event');
-                break;
-            }
+            const l = line.toLowerCase();
+            if (l.includes('wedding')) { document.getElementById('event-type-select').value = 'wedding'; break; }
+            else if (l.includes('debut')) { document.getElementById('event-type-select').value = 'debut'; break; }
+            else if (l.includes('birthday')) { document.getElementById('event-type-select').value = 'birthday'; break; }
+            else if (l.includes('baptism')) { document.getElementById('event-type-select').value = 'baptism'; break; }
+            else if (l.includes('special event')) { document.getElementById('event-type-select').value = 'special-event'; break; }
         }
         
         // Parse size
         for (const line of lines) {
             if (line.toLowerCase().includes('4r') && !line.toLowerCase().includes('5r')) {
-                selectOptionCard('size-options', '4r');
+                document.getElementById('size-select').value = '4r';
                 break;
             } else if (line.toLowerCase().includes('5r')) {
-                selectOptionCard('size-options', '5r');
+                document.getElementById('size-select').value = '5r';
                 break;
             }
         }
@@ -1770,7 +2384,7 @@ for (const line of lines) {
     
     // First check for "no envelope"
     if (lowerLine.includes('no envelope')) {
-        selectOptionCard('envelope-options', 'no-envelope');
+        document.getElementById('envelope-select').value = 'no-envelope';
         // Reset custom envelope
         currentSelections.envelope.custom = false;
         currentSelections.envelope.color = "";
@@ -1785,11 +2399,11 @@ for (const line of lines) {
     // Check for specific envelope types
     for (const [key, value] of Object.entries(envelopeMap)) {
         if (lowerLine.includes(key) && lowerLine.includes('envelope')) {
-            selectOptionCard('envelope-options', value);
+            document.getElementById('envelope-select').value = value;
             
             // IMPORTANT: Store the envelope type first
-            const envelopeName = document.querySelector(`#envelope-options .option-card[data-value="${value}"] .option-name`).textContent;
-            currentSelections.envelope.name = envelopeName;
+            const envelopeName = document.querySelector(`#envelope-select option[value="${value}"]`).textContent;
+            currentSelections.envelope.name = envelopeName || key;
             
             // Parse custom envelope details from this line
             parseCustomEnvelopeDetails(line);
@@ -1873,8 +2487,7 @@ function parseCustomEnvelopeDetails(line) {
             const insertMatch = line.match(/(\d+)\s*inserts?/i);
             if (insertMatch) {
                 const insertCount = parseInt(insertMatch[1]);
-                document.getElementById('inserts-slider').value = insertCount;
-                document.getElementById('inserts-value').textContent = `${insertCount} insert${insertCount !== 1 ? 's' : ''}`;
+                document.getElementById('inserts-input').value = insertCount;
                 currentSelections.inserts = { value: insertCount, price: insertCount * INSERT_PRICE };
                 break;
             }
@@ -1894,7 +2507,7 @@ function parseCustomEnvelopeDetails(line) {
         
         for (const [key, value] of Object.entries(paperMap)) {
             if (lowerLine.includes(key) && lowerLine.includes('paper')) {
-                selectOptionCard('paper-options', paperMap[key]);
+                document.getElementById('paper-select').value = paperMap[key];
                 break;
             }
         }
@@ -1926,7 +2539,7 @@ function parseCustomEnvelopeDetails(line) {
             const lowerLine = line.toLowerCase();
             for (const [key, value] of Object.entries(sealMap)) {
                 if (lowerLine.includes(key)) {
-                    selectOptionCard('seal-options', value);
+                    document.getElementById('seal-select').value = value;
                     break;
                 }
             }
@@ -2087,13 +2700,6 @@ for (const line of lines) {
         });
         
         // Clear existing add-ons
-        document.querySelectorAll('.addon-checkbox').forEach(checkbox => {
-            checkbox.checked = false;
-        });
-        document.querySelectorAll('.addon-input').forEach(input => {
-            input.value = 1;
-            input.disabled = true;
-        });
         currentSelections.addons = {};
         
         // Process add-on lines
@@ -2102,33 +2708,17 @@ for (const line of lines) {
             
             addonsData.forEach(addon => {
                 if (lowerLine.includes(addon.name.toLowerCase())) {
-                    // Check for quantity in the line
                     let quantity = 1;
                     const quantityMatch = line.match(/(\d+)\s*(?:page|pages|pc|pcs)/i);
-                    if (quantityMatch) {
-                        quantity = parseInt(quantityMatch[1]);
-                    }
+                    if (quantityMatch) quantity = parseInt(quantityMatch[1]);
                     
-                    // Find and check the checkbox
-                    const checkbox = document.getElementById(`addon-${addon.id}`);
-                    if (checkbox) {
-                        checkbox.checked = true;
-                        
-                        // Enable and set quantity input if exists
-                        const quantityInput = document.getElementById(`qty-${addon.id}`);
-                        if (quantityInput) {
-                            quantityInput.disabled = false;
-                            quantityInput.value = quantity;
-                        }
-                        
-                        // Update current selections
-                        currentSelections.addons[addon.id] = {
-                            name: addon.name,
-                            price: addon.price,
-                            unit: addon.unit,
-                            quantity: quantity
-                        };
-                    }
+                    currentSelections.addons[addon.id] = {
+                        name: addon.name, price: addon.price, unit: addon.unit,
+                        quantity: quantity, variant: null,
+                        isPriceDropdown: addon.dropdown && typeof addon.dropdown[0] === 'object',
+                        hasDropdown: addon.dropdown && addon.dropdown.length > 0,
+                        dropdown: addon.dropdown
+                    };
                 }
             });
         });
